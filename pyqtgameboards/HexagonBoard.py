@@ -37,8 +37,7 @@ class QHexagonboard(QtWidgets.QFrame):
         #  default white background surrounded by a black 1 width line
         brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
         painter.setBrush(brush)
-        pen = QtGui.QPen(QtGui.QColor(0,0,0))
-        pen.setWidth(1)
+        pen = QtGui.QPen(QtGui.QColor(0,0,0), 1, QtCore.Qt.SolidLine)
         painter.setPen(pen)
 
         # Create hexagons for all the rows and columns
@@ -111,14 +110,13 @@ class QHexagonFrame(QtWidgets.QFrame):
 
     def paintEvent(self, event):
         # create the hexagon at the specified location
-        hexagon = QHexagon(self.width, self.height, 0, 0, 6, 12, 0)
+        hexagon = QHexagon(self.width, self.height, 0, 0, 6, 120, 0)
 
         # prepare draw, painter is default white background surrounded by a black 1 width line
         painter = QtGui.QPainter(self)
         brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
         painter.setBrush(brush)
-        pen = QtGui.QPen(QtGui.QColor(0,0,0))
-        pen.setWidth(1)
+        pen = QtGui.QPen(QtGui.QColor(0,0,0), 1, QtCore.Qt.Solidline)
         painter.setPen(pen)
 
         # draw the shape
@@ -164,45 +162,7 @@ class QHexagon(QtGui.QPolygonF):
 
 
 
-def test_create_overlay():
-    """
-    Example how to create overlay tiles.
-    List of enemies in red and list of allies in green
-
-    Its created by creating a dictionary of 3 values, a brush value, a pen value
-    and a list of positions where it applies
-    """
-
-    allybrush = QtGui.QBrush(QtGui.QColor(0,255,0,150))
-    allypen = QtGui.QPen(QtGui.QColor(0,255,0))
-    allypen.setWidth(3)
-
-    allydict = {
-        "Brush": allybrush,
-        "Pen": allypen,
-        "Positions": [
-            [1, 3], 
-            [1, 1],
-        ],
-        }
-
-    enemybrush = QtGui.QBrush(QtGui.QColor(255,0,0,150))
-    enemypen = QtGui.QPen(QtGui.QColor(255,0,0))
-    enemypen.setWidth(3)
-
-    enemydict = {
-        "Brush": enemybrush,
-        "Pen": enemypen,
-        "Positions": [
-            [2, 3],
-            [3, 6],
-        ],
-        }
-
-    overlays = [allydict, enemydict]
-    return overlays
-
-def test_hexagon():
+def test_single_hexagon():
 
     global app
     app = QtWidgets.QApplication(sys.argv)
@@ -248,8 +208,73 @@ def test_overlay_board():
     
     sys.exit(app.exec_())
 
+def test_create_overlay():
+    """
+    Example how to create overlay tiles.
+    List of enemies in red and list of allies in green
+
+    Its created by creating a dictionary of 3 values, a brush value, a pen value
+    and a list of positions where it applies
+    """
+
+    overlays = []
+
+    blockbrush = QtGui.QBrush(QtGui.QColor(0,0,0,255))
+    blockpen = QtGui.QPen(QtGui.QColor(0,0,0), 3, QtCore.Qt.NoPen)
+    blockdict = {
+        "Brush": blockbrush,
+        "Pen": blockpen,
+        "Positions": [
+            [2, 6],
+            [3, 6],
+            [3, 5],
+            [4, 6],
+        ],
+    }
+    overlays.append(blockdict)
+
+    allybrush = QtGui.QBrush(QtGui.QColor(0,255,0,100))
+    allypen = QtGui.QPen(QtGui.QColor(0,255,0), 0, QtCore.Qt.NoPen)
+    allydict = {
+        "Brush": allybrush,
+        "Pen": allypen,
+        "Positions": [
+            [1, 3], 
+            [4, 3],
+        ],
+    }
+    overlays.append(allydict)
+
+    enemybrush = QtGui.QBrush(QtGui.QColor(255,0,0,100))
+    enemypen = QtGui.QPen(QtGui.QColor(255,0,0), 0, QtCore.Qt.NoPen)
+    enemydict = {
+        "Brush": enemybrush,
+        "Pen": enemypen,
+        "Positions": [
+            [2, 3],
+            [5, 6],
+        ],
+    }
+    overlays.append(enemydict)
+
+    coverbrush = QtGui.QBrush(QtGui.QColor(255,255,255,0))
+    coverpen = QtGui.QPen(QtGui.QColor(0,0,0), 3, QtCore.Qt.DashLine)
+    coverdict = {
+        "Brush": coverbrush,
+        "Pen": coverpen,
+        "Positions": [
+            [2, 2],
+            [3, 2],
+            [4, 3],
+        ],
+    }
+    overlays.append(coverdict)
+
+    return overlays
+
+
 if __name__ == '__main__':
 
-    # test_hexagon()
+    # test_single_hexagon()
     # test_empty_board()
     test_overlay_board()
