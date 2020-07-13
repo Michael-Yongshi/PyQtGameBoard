@@ -4,78 +4,90 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from guidarktheme import widget_template
 
 class QHexagonboard(QtWidgets.QFrame):
-    def __init__(self, horizontal, rows, columns, specials):
+    def __init__(self, horizontal, rows, columns, overlays):
         QtWidgets.QFrame.__init__(self)
 
         # set board parameters
         self.horizontal = horizontal
         self.rows = rows
         self.columns = columns
-        self.specials = specials
+        self.overlays = overlays
 
     def paintEvent(self, event):
-        """
-        paints all shapes of the game
-        
+        """       
         Creates a gameboard of rows and columns of hexagons of a sepecific
         size. 
+
         A row consists of a number of hexagons that touch at the horizontal tip. 
         The offset hexagons in between them, offset above and below, are in
         a different row. This means that 4 columns already look like a board
         with 8 columns as the offset hexes are not counted for the same row.
+
+        Will create different overlays depending on the 'overlays' parameter
         """
 
         #  painter is default white background surrounded by a black 1 width line
         painter = QtGui.QPainter(self)
 
+        # set default paint values
+        brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
+        painter.setBrush(brush)
+        pen = QtGui.QPen(QtGui.QColor(0,0,0))
+        pen.setWidth(1)
+        painter.setPen(pen)
+
+        # Create default underlay
         row = 0
         while row < self.rows:
             
             col = 0
             while col < self.columns:
 
-                # default is for horizontal aligned board, if not we have to switch rows and columns and set the angle accordingly
-                if self.horizontal == False:
-                    # if row number is odd, offset the hexes nicely in between the columns of the previous
-                    positiony = col * 36 if (row % 2) == 0 else col * 36 + 18
-                    positionx = row * 10
-                    # set the angle of the hexagon
-                    angle = 90
-
-                else:
-                    # if row number is odd, offset the hexes nicely in between the columns of the previous
-                    positionx = col * 36 if (row % 2) == 0 else col * 36 + 18
-                    positiony = row * 10
-                    # set the angle of the hexagon
-                    angle = 0
-
                 # create the hexagon at the specified location
+                positionx, positiony, angle = self.get_hexagon_position(row, col, self.horizontal)
                 hexagon = QHexagon(self.width, self.height, positionx, positiony, 6, 12, angle)
 
-                # set different style for this hex if applicable
-                """ TO DO
-                add drawing base first and only afterwards draw the 'special' tiles
-                """
+                # draw the shape
+                painter.drawPolygon(hexagon)
+                
+                col += 1
+            row += 1
 
-                # set default values
-                brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
-                painter.setBrush(brush)
-                pen = QtGui.QPen(QtGui.QColor(0,0,0))
-                pen.setWidth(1)
-                painter.setPen(pen)
+        # Create overlays
+        for special in self.overlays:
+            for tile in special["Positions"]:
 
-                for special in self.specials:
-                    for tile in special["Positions"]:
-                        if row == tile[0] and col == tile[1]:
-                            painter.setBrush(special["Brush"])
-                            painter.setPen(special["Pen"])
-                            break
+                # create the hexagon at the specified location
+                positionx, positiony, angle = self.get_hexagon_position(tile[0], tile[1], self.horizontal)
+                hexagon = QHexagon(self.width, self.height, positionx, positiony, 6, 12, angle)
+
+                painter.setBrush(special["Brush"])
+                painter.setPen(special["Pen"])
 
                 # draw the shape
                 painter.drawPolygon(hexagon)
 
-                col += 1
-            row += 1
+    def get_hexagon_position(self, row, column, horizontal):
+        """
+        Method to easily determine the angle and position of a hexagon tile
+        """
+
+        # default is for horizontal aligned board, if not we have to switch rows and columns and set the angle accordingly
+        if horizontal == False:
+            # if row number is odd, offset the hexes nicely in between the columns of the previous
+            positiony = column * 36 if (row % 2) == 0 else column * 36 + 18
+            positionx = row * 10
+            # set the angle of the hexagon
+            angle = 90
+
+        else:
+            # if row number is odd, offset the hexes nicely in between the columns of the previous
+            positionx = column * 36 if (row % 2) == 0 else column * 36 + 18
+            positiony = row * 10
+            # set the angle of the hexagon
+            angle = 0
+    	
+        return positionx, positiony, angle
 
 class QHexagonFrame(QtWidgets.QFrame):
     def __init__(self):
@@ -157,8 +169,8 @@ def get_special_tiles():
         ],
         }
 
-    specials = [allydict, enemydict]
-    return specials
+    overlays = [allydict, enemydict]
+    return overlays
 
 
 def test_hexagon():
@@ -184,8 +196,8 @@ def test_board():
     global main
     main = QtWidgets.QMainWindow()
     
-    specials = get_special_tiles()
-    frame = QHexagonboard(horizontal = True, rows = 20, columns = 10, specials = specials)
+    overlays = get_special_tiles()
+    frame = QHexagonboard(horizontal = True, rows = 20, columns = 10, overlays = overlays)
     main.setCentralWidget(frame)
 
     main.showMaximized()
