@@ -1,6 +1,36 @@
 # PyQtGameBoard
 PyQt5 widget that draws a board on the screen to include in games or map drawing application.
 
+## Install
+```
+pip install yongshi-pyqtgameboard
+```
+
+## Import
+```
+from pyqtgameboards.HexagonBoard import QHexagonboard
+```
+
+## How to
+to try out, copying the following:
+```
+if __name__ == '__main__':
+
+    global app
+    app = QtWidgets.QApplication(sys.argv)
+
+    global main
+    main = QtWidgets.QMainWindow()
+    main.setCentralWidget(QHexagonboard(
+        horizontal = True, 
+        rows = 20, 
+        columns = 10
+        ))
+    main.showMaximized()
+    
+    sys.exit(app.exec_())
+```
+
 ## Licence
 
 Licensed under GPL-3.0-or-later, see LICENSE file for details.
