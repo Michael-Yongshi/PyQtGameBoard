@@ -4,7 +4,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from guidarktheme import widget_template
 
 class QHexagonboard(QtWidgets.QFrame):
-    def __init__(self, horizontal, rows, columns, overlays):
+    def __init__(self, horizontal, rows, columns, overlays = []):
         QtWidgets.QFrame.__init__(self)
 
         # set board parameters
@@ -217,7 +217,22 @@ def test_hexagon():
     
     sys.exit(app.exec_())
 
-def test_board():
+def test_empty_board():
+
+    global app
+    app = QtWidgets.QApplication(sys.argv)
+
+    global main
+    main = QtWidgets.QMainWindow()
+    
+    frame = QHexagonboard(horizontal = True, rows = 20, columns = 10)
+    main.setCentralWidget(frame)
+
+    main.showMaximized()
+    
+    sys.exit(app.exec_())
+
+def test_overlay_board():
 
     global app
     app = QtWidgets.QApplication(sys.argv)
@@ -236,4 +251,5 @@ def test_board():
 if __name__ == '__main__':
 
     # test_hexagon()
-    test_board()
+    # test_empty_board()
+    test_overlay_board()
