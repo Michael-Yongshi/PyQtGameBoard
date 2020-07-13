@@ -18,25 +18,30 @@ class QHexagonboard(QtWidgets.QFrame):
         Creates a gameboard of rows and columns of hexagons of a sepecific
         size. 
 
-        A row consists of a number of hexagons that touch at the horizontal tip. 
+        the default board consists of a number of hexagons that touch at the horizontal tip. 
         The offset hexagons in between them, offset above and below, are in
         a different row. This means that 4 columns already look like a board
         with 8 columns as the offset hexes are not counted for the same row.
-
-        Will create different overlays depending on the 'overlays' parameter
         """
 
-        #  painter is default white background surrounded by a black 1 width line
         painter = QtGui.QPainter(self)
+        self.paint_underlay(painter)
+        self.paint_overlays(painter)
 
-        # set default paint values
+    def paint_underlay(self, painter):
+        """
+        The basis of the gameboard
+        this method creates a hexagon for all the rows and columns
+        """
+
+        #  default white background surrounded by a black 1 width line
         brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
         painter.setBrush(brush)
         pen = QtGui.QPen(QtGui.QColor(0,0,0))
         pen.setWidth(1)
         painter.setPen(pen)
 
-        # Create default underlay
+        # Create hexagons for all the rows and columns
         row = 0
         while row < self.rows:
             
@@ -49,20 +54,51 @@ class QHexagonboard(QtWidgets.QFrame):
 
                 # draw the shape
                 painter.drawPolygon(hexagon)
-                
+
                 col += 1
             row += 1
 
+    def paint_overlays(self, painter):
+        """
+        Overlays will be created according to the 'overlays' parameter
+        this is a list containing dicts of all overlays, which contains per overlay (dictionary)
+        - the fill / brush of the tile type,
+        - the pen / line details of the tile type and
+        - a list of all the positions of the tile type
+
+        ---------example----------------
+            overlays = []
+
+            overlay1brush = QtGui.QBrush(QtGui.QColor(0,255,0,150))
+            overlay1pen = QtGui.QPen(QtGui.QColor(0,255,0))
+            overlay1pen.setWidth(3)
+
+            overlay1dict = {
+                "Brush": overlay1brush,
+                "Pen": overlay1pen,
+                "Positions": [
+                    [tile 1 x coordinate, tile 1 y coordinate], 
+                    [tile 2 x coordinate, tile 2 y coordinate],
+                    [1, 2],
+                    [3, 7],
+                    ],
+                }
+
+            overlays.append(overlay1dict)
+        --------------------------------
+        """
+
         # Create overlays
-        for special in self.overlays:
-            for tile in special["Positions"]:
+        for overlay in self.overlays:
+            for tile in overlay["Positions"]:
 
                 # create the hexagon at the specified location
                 positionx, positiony, angle = self.get_hexagon_position(tile[0], tile[1], self.horizontal)
                 hexagon = QHexagon(self.width, self.height, positionx, positiony, 6, 12, angle)
 
-                painter.setBrush(special["Brush"])
-                painter.setPen(special["Pen"])
+                # set the style of this overlay
+                painter.setBrush(overlay["Brush"])
+                painter.setPen(overlay["Pen"])
 
                 # draw the shape
                 painter.drawPolygon(hexagon)
@@ -70,6 +106,7 @@ class QHexagonboard(QtWidgets.QFrame):
     def get_hexagon_position(self, row, column, horizontal):
         """
         Method to easily determine the angle and position of a hexagon tile
+        within a gameboard
         """
 
         # default is for horizontal aligned board, if not we have to switch rows and columns and set the angle accordingly
@@ -116,9 +153,13 @@ class QHexagon(QtGui.QPolygonF):
     angle of 
     0 makes a horizontal aligned hexagon (first point points flat), 
     90 makes a vertical aligned hexagon (first point points upwards)
+
+    The hexagon needs the width and height of the current widget or window 
+    in order to place itself. 
+    the position x and y denote the position relative to the current width and height
     """
 
-    def __init__(self, width, height, positionx, positiony, sides, radius, angle, brush = None, pen = None):
+    def __init__(self, width, height, positionx, positiony, sides, radius, angle):
         QtWidgets.QWidget.__init__(self)
         
         self.positionx = positionx
@@ -127,16 +168,26 @@ class QHexagon(QtGui.QPolygonF):
         self.radius = radius
         self.angle = angle
 
-        w = 360/self.sides                                                   # angle per step
-        for i in range(self.sides):                                          # add the points of polygon
+        # angle per step
+        w = 360/self.sides
+
+        # add the points of polygon per side
+        for i in range(self.sides):
             t = w*i + self.angle
-            x = self.positionx + self.radius*math.cos(math.radians(t))                        # horizontal alignment
-            y = self.positiony + self.radius*math.sin(math.radians(t))                        # vertical alignment
+
+            # horizontal alignment
+            x = self.positionx + self.radius*math.cos(math.radians(t))
+            # vertical alignment
+            y = self.positiony + self.radius*math.sin(math.radians(t))
+
+            # add side to polygon
             self.append(QtCore.QPointF(width()/2 +x, height()/2 + y)) 
 
-def get_special_tiles():
+
+
+def test_create_overlay():
     """
-    Example how to create special tiles.
+    Example how to create overlay tiles.
     List of enemies in red and list of allies in green
 
     Its created by creating a dictionary of 3 values, a brush value, a pen value
@@ -172,7 +223,6 @@ def get_special_tiles():
     overlays = [allydict, enemydict]
     return overlays
 
-
 def test_hexagon():
 
     global app
@@ -196,7 +246,7 @@ def test_board():
     global main
     main = QtWidgets.QMainWindow()
     
-    overlays = get_special_tiles()
+    overlays = test_create_overlay()
     frame = QHexagonboard(horizontal = True, rows = 20, columns = 10, overlays = overlays)
     main.setCentralWidget(frame)
 
