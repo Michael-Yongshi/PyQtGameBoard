@@ -62,30 +62,9 @@ class QHexagonboard(QtWidgets.QFrame):
         """
         Overlays will be created according to the 'overlays' parameter
         this is a list containing dicts of all overlays, which contains per overlay (dictionary)
-        - the fill / brush of the tile type,
-        - the pen / line details of the tile type and
-        - a list of all the positions of the tile type
-
-        ---------example----------------
-            overlays = []
-
-            overlay1brush = QtGui.QBrush(QtGui.QColor(0,255,0,150))
-            overlay1pen = QtGui.QPen(QtGui.QColor(0,255,0))
-            overlay1pen.setWidth(3)
-
-            overlay1dict = {
-                "Brush": overlay1brush,
-                "Pen": overlay1pen,
-                "Positions": [
-                    [tile 1 x coordinate, tile 1 y coordinate], 
-                    [tile 2 x coordinate, tile 2 y coordinate],
-                    [1, 2],
-                    [3, 7],
-                    ],
-                }
-
-            overlays.append(overlay1dict)
-        --------------------------------
+        - the fill / brush of the tile type (Brush),
+        - the pen / line details of the tile type (Pen) and
+        - a list of all the positions of the tile type (Positions)
         """
 
         # Create overlays
