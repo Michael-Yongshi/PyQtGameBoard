@@ -127,8 +127,8 @@ class QHexagonboard(QtWidgets.QFrame):
         # set screen adjustments
         if self.relative == True:
             # get relative position of board against center of screen
-            offset_x = self.width() / 3
-            offset_y = self.height() / 3
+            offset_x = self.width() / 2 - ((self.columns / 1) * radius)
+            offset_y = self.height() / 2 - ((self.rows / 2) * radius)
 
         else:
             # get absolute position of tiles against top and left of screen
@@ -143,13 +143,13 @@ class QHexagonboard(QtWidgets.QFrame):
             # set the angle of the hexagon
             angle = 0
 
-        else:
-            # if row number is odd, offset the hexes nicely in between the columns of the previous
-            positiony = column_default + offset_x if (row % 2) == 0 else column_offset + offset_x
-            positionx = row_default + offset_y
+        # else:
+        #     # if row number is odd, offset the hexes nicely in between the columns of the previous
+        #     positiony = column_default + offset_x if (row % 2) == 0 else column_offset + offset_x
+        #     positionx = row_default + offset_y
 
-            # set the angle of the hexagon
-            angle = 90
+        #     # set the angle of the hexagon
+        #     angle = 90
 
         hexagon = QHexagon(positionx, positiony, 6, radius, angle)
 
@@ -333,5 +333,5 @@ def main(frame):
 if __name__ == '__main__':
 
     # test_single_hexagon()
-    test_empty_board()
-    # test_overlay_board()
+    # test_empty_board()
+    test_overlay_board()
