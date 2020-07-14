@@ -119,16 +119,16 @@ class QHexagonboard(QtWidgets.QFrame):
         # tile size
         radius = 2 * self.scale
 
-        # space between tiles between columns and rows to make a snug fit
+        # space between tiles in columns and rows to make a snug fit
         column_default = (column * 6) * self.scale
         column_offset = column_default + (3 * self.scale)
         row_default = (row * 1.7) * self.scale
 
         # set screen adjustments
         if self.relative == True:
-            # get relative position of board against center of screen
-            offset_x = self.width() / 2 - ((self.columns / 1) * radius)
-            offset_y = self.height() / 2 - ((self.rows / 2) * radius)
+            # get relative position of tile against center of screen
+            offset_x = self.width() / 2 - ((self.columns * 1.4) * radius)
+            offset_y = self.height() / 2 - ((self.rows / 2.5) * radius)
 
         else:
             # get absolute position of tiles against top and left of screen
