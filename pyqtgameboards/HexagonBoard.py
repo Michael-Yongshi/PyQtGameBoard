@@ -15,7 +15,6 @@ class QHexagonboard(QtWidgets.QFrame):
 
         # default parameters
         self.scale = 10 # 100%
-        self.center = QtWidgets.QDesktopWidget().availableGeometry().center()
 
     def wheelEvent(self, event):
 
@@ -42,6 +41,10 @@ class QHexagonboard(QtWidgets.QFrame):
         with 8 columns as the offset hexes are not counted for the same row.
         """
 
+        # determine window size
+        self.center = QtCore.QPointF(self.geometry().width() / 2, self.geometry().height() / 2)
+
+        # select the painter
         painter = QtGui.QPainter(self)
 
         # draw the basis for the board
@@ -68,7 +71,7 @@ class QHexagonboard(QtWidgets.QFrame):
             
             column = 0
             while column < self.columns:
-
+                
                 # create the hexagon at the specified location
                 hexagon = self.create_hexagon(row, column)
 
@@ -114,40 +117,67 @@ class QHexagonboard(QtWidgets.QFrame):
         # tile size
         radius = 2 * self.scale
 
-        # space between tiles in columns and rows to make a snug fit
-        column_default = (column * 6) * self.scale
-        column_offset = column_default + (3 * self.scale)
-        row_default = (row * 1.7) * self.scale
-
-        # set screen adjustments
-        if self.relative == True:
-            # get relative position of tile against center of screen
-            print(f"center = {self.center}")
-            offset_x = self.center.x() - ((self.columns / 2) * (3 * radius))
-            offset_y = self.center.y() - ((self.rows / 2) * (0.75 * radius))
-            print(f"offset x = {offset_x}")
-            print(f"offset y = {offset_y}")
-
-        else:
-            # get absolute position of tiles against top and left of screen
-            offset_x = 2 * self.scale
-            offset_y = 2 * self.scale
-
-        # default is for horizontal aligned board, if not we have to switch rows and columns and set the angle accordingly
         if self.horizontal == True:
+            # set the angle of the hexagon
+            angle = 0
+        
+            # space between tiles in columns and rows to make a snug fit
+            column_default = (column * 6) * self.scale
+            column_offset = column_default + (3 * self.scale)
+            row_default = (row * 1.7) * self.scale
+
+            # set screen adjustments
+            if self.relative == True:
+                # get relative position of tile against center of screen
+                print(f"center = {self.center}")
+                
+                offset_x = self.center.x() - ((self.columns / 2) * (2 * self.scale))
+                offset_y = self.center.y() - ((self.rows / 2) * (2 * self.scale))
+                print(f"offset x = {offset_x}")
+                print(f"offset y = {offset_y}")
+
+            else:
+                # get absolute position of tiles against top and left of screen
+                offset_x = 2 * self.scale
+                offset_y = 2 * self.scale
+
             # if row number is odd, offset the hexes nicely in between the columns of the previous
             positionx = column_default + offset_x if (row % 2) == 0 else column_offset + offset_x
             positiony = row_default + offset_y
+
+
+        elif self.horizontal == False:
+            """Needs a lot more work"""
             # set the angle of the hexagon
-            angle = 0
+            angle = 90
 
-        # else:
-        #     # if row number is odd, offset the hexes nicely in between the columns of the previous
-        #     positiony = column_default + offset_x if (row % 2) == 0 else column_offset + offset_x
-        #     positionx = row_default + offset_y
+            # space between tiles in columns and rows to make a snug fit
+            column_default = (column * 3) * self.scale
+            row_default = (row * 2.5) * self.scale
+            row_offset = row_default + (1.5 * self.scale)
 
-        #     # set the angle of the hexagon
-        #     angle = 90
+            # set screen adjustments
+            if self.relative == True:
+                # get relative position of tile against center of screen
+                print(f"center = {self.center}")
+                
+                offset_x = self.center.x() - ((self.columns / 2) * (2 * self.scale))
+                offset_y = self.center.y() - ((self.rows / 2) * (2 * self.scale))
+                print(f"offset x = {offset_x}")
+                print(f"offset y = {offset_y}")
+
+            else:
+                # get absolute position of tiles against top and left of screen
+                offset_x = 2 * self.scale
+                offset_y = 2 * self.scale
+
+            # if row number is odd, offset the hexes nicely in between the columns of the previous
+            positionx = column_default + offset_x
+            positiony = row_default + offset_y if (column % 2) == 0 else row_offset + offset_x
+
+
+
+
 
         hexagon = QHexagon(positionx, positiony, 6, radius, angle)
 
@@ -238,7 +268,7 @@ def test_single_hexagon():
 def test_empty_board():
     
     app()
-    frame = QHexagonboard(rows = 21, columns = 11, horizontal=False)
+    frame = QHexagonboard(rows = 21, columns = 11, horizontal=True)
     main(frame)
 
 def test_overlay_board():
@@ -331,5 +361,5 @@ def main(frame):
 if __name__ == '__main__':
 
     # test_single_hexagon()
-    # test_empty_board()
-    test_overlay_board()
+    test_empty_board()
+    # test_overlay_board()
