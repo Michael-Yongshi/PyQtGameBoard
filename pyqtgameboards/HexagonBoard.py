@@ -4,7 +4,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from guidarktheme import widget_template
 
 class QHexagonboard(QtWidgets.QFrame):
-    def __init__(self, horizontal, rows, columns, overlays = []):
+    def __init__(self, horizontal, rows, columns, overlays = [], relative = True):
         QtWidgets.QFrame.__init__(self)
 
         # set board parameters
@@ -12,7 +12,13 @@ class QHexagonboard(QtWidgets.QFrame):
         self.rows = rows
         self.columns = columns
         self.overlays = overlays
-        self.scale = 10
+        self.relative = relative
+
+        # default parameters
+        self.scale = 5 # 100%
+        self.setMinimumWidth(800) # start screenwidth
+        self.setMinimumHeight(600) # start screenheight
+
         self.center = QtCore.QPointF(self.width()/2, self.height()/2)
         print(f"screencenter = {self.center}")
         
@@ -21,7 +27,8 @@ class QHexagonboard(QtWidgets.QFrame):
         # get delta of mousewheel scroll, default is 120 pixels, we devide by 12 to return 10 that calculates easier
         delta = event.angleDelta()
         delta /= 120
-        self.scale += delta.y()
+        scale = self.scale + delta.y()
+        self.scale = scale if scale > 0 else self.scale
         print(f"new scale is {self.scale}")
 
         # determine location of point to zoom in to / out from
@@ -106,34 +113,49 @@ class QHexagonboard(QtWidgets.QFrame):
                 painter.drawPolygon(hexagon)
 
     def create_hexagon(self, row, column):
-
-        positionx, positiony, angle = self.get_hexagon_position(row, column)
-
-        radius = self.scale * 1.2
-
-        hexagon = QHexagon(positionx, positiony, 6, radius, angle)
-
-        return hexagon
-
-    def get_hexagon_position(self, row, column):
         """
         Method to easily determine the angle and position of a hexagon tile
         within a gameboard
         """
-        
-        # get relative position of tiles against center of screen
-        # get count of total rows and columns and decide the default center of the screen with screen width and height
-        # get the difference between self.center and this default center
-        # move the adjustments inversely to this difference (zoom left of center means tiles move to the right)
+       
+        # tile size
+        radius = self.scale * 4
 
-        # get absolute position of tiles against top of screen
-        adjustment_y = 2 * self.scale
-        # get absolute position of tiles against left of screen
-        adjustment_x = 2 * self.scale
+        # set screen adjustments
+        if self.relative == True:
+            print(f"screen is {self.width()} by {self.height()}")
 
-        column_default = (column * 3.6) * self.scale
-        column_offset = column_default + (1.8 * self.scale)
-        row_default = row * self.scale
+            # get relative position of tiles against center of screen
+            pixelperrow = (self.height()) / self.rows
+            pixelperrowscaled = pixelperrow * self.scale / 10
+            rowfrommiddle = row - (self.rows / 2)
+            relative_offset_y = self.height()/2 + (rowfrommiddle * pixelperrowscaled)
+    
+            pixelpercolumn = (self.width()) / self.columns
+            pixelpercolumnscaled = pixelpercolumn * self.scale / 10
+            columnfrommiddle = column - (self.columns / 2)
+            relative_offset_x = self.height()/2 + (columnfrommiddle * pixelpercolumnscaled)
+
+            # add scaling and default values
+            column_default = (column * 4.7) * self.scale
+            column_offset = column_default + (6 * self.scale)
+            row_default = (row * 0.6) * self.scale
+
+            adjustment_y = relative_offset_y
+            adjustment_x = relative_offset_x
+
+        else:
+            # Absolute values
+            column_default = (column * 3.6) * self.scale
+            column_offset = column_default + (1.8 * self.scale)
+            row_default = row * self.scale
+
+            # get absolute position of tiles against top and left of screen
+            absolute_offset_y = 2 * self.scale
+            absolute_offset_x = 2 * self.scale
+
+            adjustment_x = absolute_offset_x
+            adjustment_y = absolute_offset_y
 
         # default is for horizontal aligned board, if not we have to switch rows and columns and set the angle accordingly
         if self.horizontal == False:
@@ -152,7 +174,9 @@ class QHexagonboard(QtWidgets.QFrame):
             # set the angle of the hexagon
             angle = 0
     	
-        return positionx, positiony, angle
+        hexagon = QHexagon(positionx, positiony, 6, radius, angle)
+
+        return hexagon
 
 class QHexagonFrame(QtWidgets.QFrame):
     def __init__(self):
@@ -232,33 +256,22 @@ class QHexagon(QtGui.QPolygonF):
 
 def test_single_hexagon():
 
-    global app
-    app = QtWidgets.QApplication(sys.argv)
-
-    global main
-    main = QtWidgets.QMainWindow()
-
+    app()
     frame = QHexagonFrame()
-    main.setCentralWidget(frame)
+    main(frame)
 
-    main.showMaximized()
+def test_empty_board():
     
-    sys.exit(app.exec_())
+    app()
+    frame = QHexagonboard(horizontal = True, rows = 21, columns = 11)
+    main(frame)
 
 def test_overlay_board():
 
-    global app
-    app = QtWidgets.QApplication(sys.argv)
-
+    app()
     overlays = test_create_overlay()
     frame = QHexagonboard(horizontal = True, rows = 20, columns = 10, overlays = overlays)
-
-    global main
-    main = QtWidgets.QMainWindow()
-    main.setCentralWidget(frame)
-    main.showMaximized()
-    
-    sys.exit(app.exec_())
+    main(frame)
 
 def test_create_overlay():
     """
@@ -324,8 +337,24 @@ def test_create_overlay():
 
     return overlays
 
+def app():
+
+    global app
+    app = QtWidgets.QApplication(sys.argv)
+
+def main(frame):
+
+    global main
+    main = QtWidgets.QMainWindow()
+    main.setCentralWidget(frame)
+    main.show()
+    # main.showMaximized()
+    
+    sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
 
     # test_single_hexagon()
-    test_overlay_board()
+    test_empty_board()
+    # test_overlay_board()
