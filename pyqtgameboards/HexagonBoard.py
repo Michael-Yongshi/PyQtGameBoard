@@ -12,6 +12,24 @@ class QHexagonboard(QtWidgets.QFrame):
         self.rows = rows
         self.columns = columns
         self.overlays = overlays
+        self.scale = 10
+        self.center = QtCore.QPointF(self.width()/2, self.height()/2)
+        print(f"screencenter = {self.center}")
+        
+    def wheelEvent(self, event):
+
+        # get delta of mousewheel scroll, default is 120 pixels, we devide by 12 to return 10 that calculates easier
+        delta = event.angleDelta()
+        delta /= 120
+        self.scale += delta.y()
+        print(f"new scale is {self.scale}")
+
+        # determine location of point to zoom in to / out from
+        self.center = event.position()
+        print(f"center = {self.center.x()} - {self.center.y()}")
+
+        # update widget to trigger the paintEvent
+        self.update()
 
     def paintEvent(self, event):
         """       
@@ -25,7 +43,11 @@ class QHexagonboard(QtWidgets.QFrame):
         """
 
         painter = QtGui.QPainter(self)
+
+        # draw the basis for the board
         self.paint_underlay(painter)
+
+        # draw all the overlays on top of the basis
         self.paint_overlays(painter)
 
     def paint_underlay(self, painter):
@@ -44,17 +66,16 @@ class QHexagonboard(QtWidgets.QFrame):
         row = 0
         while row < self.rows:
             
-            col = 0
-            while col < self.columns:
+            column = 0
+            while column < self.columns:
 
                 # create the hexagon at the specified location
-                positionx, positiony, angle = self.get_hexagon_position(row, col, self.horizontal)
-                hexagon = QHexagon(self.width, self.height, positionx, positiony, 6, 12, angle)
+                hexagon = self.create_hexagon(row, column)
 
                 # draw the shape
                 painter.drawPolygon(hexagon)
 
-                col += 1
+                column += 1
             row += 1
 
     def paint_overlays(self, painter):
@@ -70,9 +91,12 @@ class QHexagonboard(QtWidgets.QFrame):
         for overlay in self.overlays:
             for tile in overlay["Positions"]:
 
+                # get position info from the tile list
+                row = tile[0]
+                column = tile[1]
+
                 # create the hexagon at the specified location
-                positionx, positiony, angle = self.get_hexagon_position(tile[0], tile[1], self.horizontal)
-                hexagon = QHexagon(self.width, self.height, positionx, positiony, 6, 12, angle)
+                hexagon = self.create_hexagon(row, column)
 
                 # set the style of this overlay
                 painter.setBrush(overlay["Brush"])
@@ -81,24 +105,50 @@ class QHexagonboard(QtWidgets.QFrame):
                 # draw the shape
                 painter.drawPolygon(hexagon)
 
-    def get_hexagon_position(self, row, column, horizontal):
+    def create_hexagon(self, row, column):
+
+        positionx, positiony, angle = self.get_hexagon_position(row, column)
+
+        radius = self.scale * 1.2
+
+        hexagon = QHexagon(positionx, positiony, 6, radius, angle)
+
+        return hexagon
+
+    def get_hexagon_position(self, row, column):
         """
         Method to easily determine the angle and position of a hexagon tile
         within a gameboard
         """
+        
+        # get relative position of tiles against center of screen
+        # get count of total rows and columns and decide the default center of the screen with screen width and height
+        # get the difference between self.center and this default center
+        # move the adjustments inversely to this difference (zoom left of center means tiles move to the right)
+
+        # get absolute position of tiles against top of screen
+        adjustment_y = 2 * self.scale
+        # get absolute position of tiles against left of screen
+        adjustment_x = 2 * self.scale
+
+        column_default = (column * 3.6) * self.scale
+        column_offset = column_default + (1.8 * self.scale)
+        row_default = row * self.scale
 
         # default is for horizontal aligned board, if not we have to switch rows and columns and set the angle accordingly
-        if horizontal == False:
+        if self.horizontal == False:
             # if row number is odd, offset the hexes nicely in between the columns of the previous
-            positiony = column * 36 if (row % 2) == 0 else column * 36 + 18
-            positionx = row * 10
+            positiony = column_default + adjustment_y if (row % 2) == 0 else column_offset + adjustment_y
+            positionx = row_default + adjustment_x
+
             # set the angle of the hexagon
             angle = 90
 
         else:
             # if row number is odd, offset the hexes nicely in between the columns of the previous
-            positionx = column * 36 if (row % 2) == 0 else column * 36 + 18
-            positiony = row * 10
+            positionx = column_default + adjustment_x if (row % 2) == 0 else column_offset + adjustment_x
+            positiony = row_default + adjustment_y
+
             # set the angle of the hexagon
             angle = 0
     	
@@ -110,7 +160,7 @@ class QHexagonFrame(QtWidgets.QFrame):
 
     def paintEvent(self, event):
         # create the hexagon at the specified location
-        hexagon = QHexagon(self.width, self.height, 0, 0, 6, 120, 0)
+        hexagon = QHexagon(20, 20, 6, 120, 0)
 
         # prepare draw, painter is default white background surrounded by a black 1 width line
         painter = QtGui.QPainter(self)
@@ -136,7 +186,7 @@ class QHexagon(QtGui.QPolygonF):
     the position x and y denote the position relative to the current width and height
     """
 
-    def __init__(self, width, height, positionx, positiony, sides, radius, angle):
+    def __init__(self, positionx, positiony, sides, radius, angle):
         QtWidgets.QWidget.__init__(self)
         
         self.positionx = positionx
@@ -158,9 +208,27 @@ class QHexagon(QtGui.QPolygonF):
             y = self.positiony + self.radius*math.sin(math.radians(t))
 
             # add side to polygon
-            self.append(QtCore.QPointF(width()/2 +x, height()/2 + y)) 
+            self.append(QtCore.QPointF(x, y)) 
 
 
+    @QtCore.pyqtSlot()
+    def zoom_in(self):
+        scale_tr = QtGui.QTransform()
+        scale_tr.scale(self, self.factor)
+
+        tr = self.view.transform() * scale_tr
+        self.view.setTransform(tr)
+
+    @QtCore.pyqtSlot()
+    def zoom_out(self):
+        scale_tr = QtGui.QTransform()
+        scale_tr.scale(self.factor, self.factor)
+
+        scale_inverted, invertible = scale_tr.inverted()
+
+        if invertible:
+            tr = self._view.transform() * scale_inverted
+            self.view.setTransform(tr)
 
 def test_single_hexagon():
 
@@ -177,33 +245,17 @@ def test_single_hexagon():
     
     sys.exit(app.exec_())
 
-def test_empty_board():
-
-    global app
-    app = QtWidgets.QApplication(sys.argv)
-
-    global main
-    main = QtWidgets.QMainWindow()
-    
-    frame = QHexagonboard(horizontal = True, rows = 20, columns = 10)
-    main.setCentralWidget(frame)
-
-    main.showMaximized()
-    
-    sys.exit(app.exec_())
-
 def test_overlay_board():
 
     global app
     app = QtWidgets.QApplication(sys.argv)
 
-    global main
-    main = QtWidgets.QMainWindow()
-    
     overlays = test_create_overlay()
     frame = QHexagonboard(horizontal = True, rows = 20, columns = 10, overlays = overlays)
-    main.setCentralWidget(frame)
 
+    global main
+    main = QtWidgets.QMainWindow()
+    main.setCentralWidget(frame)
     main.showMaximized()
     
     sys.exit(app.exec_())
@@ -276,5 +328,4 @@ def test_create_overlay():
 if __name__ == '__main__':
 
     # test_single_hexagon()
-    # test_empty_board()
     test_overlay_board()
