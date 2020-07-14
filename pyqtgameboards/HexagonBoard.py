@@ -15,11 +15,8 @@ class QHexagonboard(QtWidgets.QFrame):
 
         # default parameters
         self.scale = 10 # 100%
-        self.setMinimumWidth(800) # start screenwidth
-        self.setMinimumHeight(600) # start screenheight
+        self.center = QtWidgets.QDesktopWidget().availableGeometry().center()
 
-        self.center = QtCore.QPointF(self.width()/2, self.height()/2)
-        
     def wheelEvent(self, event):
 
         # get delta of mousewheel scroll, default is 120 pixels, we devide by 12 to return 10 that calculates easier
@@ -27,11 +24,9 @@ class QHexagonboard(QtWidgets.QFrame):
         delta /= 120
         scale = self.scale + delta.y()
         self.scale = scale if scale > 0 else self.scale
-        print(f"new scale is {self.scale}")
 
         # determine location of point to zoom in to / out from
-        self.center = event.position()
-        print(f"center = {self.center.x()} - {self.center.y()}")
+        self.target = event.position()
 
         # update widget to trigger the paintEvent
         self.update()
@@ -127,8 +122,11 @@ class QHexagonboard(QtWidgets.QFrame):
         # set screen adjustments
         if self.relative == True:
             # get relative position of tile against center of screen
-            offset_x = self.width() / 2 - ((self.columns * 1.4) * radius)
-            offset_y = self.height() / 2 - ((self.rows / 2.5) * radius)
+            print(f"center = {self.center}")
+            offset_x = self.center.x() - ((self.columns / 2) * (3 * radius))
+            offset_y = self.center.y() - ((self.rows / 2) * (0.75 * radius))
+            print(f"offset x = {offset_x}")
+            print(f"offset y = {offset_y}")
 
         else:
             # get absolute position of tiles against top and left of screen
