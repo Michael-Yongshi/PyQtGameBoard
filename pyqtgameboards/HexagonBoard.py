@@ -1,7 +1,6 @@
 import sys, math
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from guidarktheme import widget_template
 
 class QHexagonboard(QtWidgets.QFrame):
     def __init__(self, horizontal, rows, columns, overlays = [], relative = True):
