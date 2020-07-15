@@ -43,6 +43,8 @@ class QHexagonboard(QtWidgets.QFrame):
 
         # determine window size
         self.center = QtCore.QPointF(self.geometry().width() / 2, self.geometry().height() / 2)
+        print(self.center)
+        print(self.scale)
 
         # select the painter
         painter = QtGui.QPainter(self)
@@ -64,7 +66,9 @@ class QHexagonboard(QtWidgets.QFrame):
         painter.setBrush(brush)
         pen = QtGui.QPen(QtGui.QColor(0,0,0), 1, QtCore.Qt.SolidLine)
         painter.setPen(pen)
-
+        font = QtGui.QFont('Decorative', 10)
+        painter.setFont(font)
+        
         # Create hexagons for all the rows and columns
         row = 0
         while row < self.rows:
@@ -77,6 +81,8 @@ class QHexagonboard(QtWidgets.QFrame):
 
                 # draw the shape
                 painter.drawPolygon(hexagon)
+                position = QtCore.QPoint(hexagon.x, hexagon.y)
+                painter.drawText(position, f"{position.x()}-{position.y()}")
 
                 column += 1
             row += 1
@@ -122,28 +128,40 @@ class QHexagonboard(QtWidgets.QFrame):
             angle = 0
         
             # space between tiles in columns and rows to make a snug fit
-            column_default = (column * 6) * self.scale
-            column_offset = column_default + (3 * self.scale)
-            row_default = (row * 1.7) * self.scale
+            column_default = 6 * self.scale
+            column_offset = column_default / 2
+
+            column_distance_even = column * column_default
+            column_distance_odd = column * column_default + column_offset
+
+            row_default = 1.7 * self.scale
+            row_distance = row * row_default
 
             # set screen adjustments
             if self.relative == True:
                 # get relative position of tile against center of screen
-                print(f"center = {self.center}")
-                
-                offset_x = self.center.x() - ((self.columns / 2) * (2 * self.scale))
-                offset_y = self.center.y() - ((self.rows / 2) * (2 * self.scale))
-                print(f"offset x = {offset_x}")
-                print(f"offset y = {offset_y}")
+                # print(f"center = {self.center}")
+
+                """
+                center is 683 (1366 / 2) width and 352 ((768 - 63) / 2) height (middle tile, 873 - 312)
+                center is 960 (1920 / 2) width and 508,5 ((1080 - 63) / 2) heigth
+
+                radius is 2 * scale (10) = 20 pixels
+                """
+
+                screen_offset_x = self.center.x() - ((self.columns / 2) * column_default)
+                screen_offset_y = self.center.y() - ((self.rows / 2) * row_default)
+                # print(f"offset x = {screen_offset_x}")
+                # print(f"offset y = {screen_offset_y}")
 
             else:
                 # get absolute position of tiles against top and left of screen
-                offset_x = 2 * self.scale
-                offset_y = 2 * self.scale
+                screen_offset_x = 2 * self.scale
+                screen_offset_y = 2 * self.scale
 
             # if row number is odd, offset the hexes nicely in between the columns of the previous
-            positionx = column_default + offset_x if (row % 2) == 0 else column_offset + offset_x
-            positiony = row_default + offset_y
+            x = column_distance_even + screen_offset_x if (row % 2) == 0 else column_distance_odd + screen_offset_x
+            y = row_distance + screen_offset_y
 
 
         elif self.horizontal == False:
@@ -152,34 +170,34 @@ class QHexagonboard(QtWidgets.QFrame):
             angle = 90
 
             # space between tiles in columns and rows to make a snug fit
-            column_default = (column * 3) * self.scale
-            row_default = (row * 2.5) * self.scale
-            row_offset = row_default + (1.5 * self.scale)
+            column_default = 3 * self.scale
+            column_distance = column * column_default
+
+            row_default = 2.5 * self.scale
+            row_offset = 1.5 * self.scale
+            row_distance_even = row * row_default
+            row_distance_odd = row * row_default + row_offset
 
             # set screen adjustments
             if self.relative == True:
                 # get relative position of tile against center of screen
-                print(f"center = {self.center}")
+                # print(f"center = {self.center}")
                 
-                offset_x = self.center.x() - ((self.columns / 2) * (2 * self.scale))
-                offset_y = self.center.y() - ((self.rows / 2) * (2 * self.scale))
-                print(f"offset x = {offset_x}")
-                print(f"offset y = {offset_y}")
+                screen_offset_x = self.center.x() - ((self.columns / 2) * (2 * self.scale))
+                screen_offset_y = self.center.y() - ((self.rows / 2) * (2 * self.scale))
+                # print(f"offset x = {screen_offset_x}")
+                # print(f"offset y = {screen_offset_y}")
 
             else:
                 # get absolute position of tiles against top and left of screen
-                offset_x = 2 * self.scale
-                offset_y = 2 * self.scale
+                screen_offset_x = 2 * self.scale
+                screen_offset_y = 2 * self.scale
 
             # if row number is odd, offset the hexes nicely in between the columns of the previous
-            positionx = column_default + offset_x
-            positiony = row_default + offset_y if (column % 2) == 0 else row_offset + offset_x
+            x = column_distance + screen_offset_x
+            y = row_distance_even + screen_offset_y if (column % 2) == 0 else row_distance_odd + screen_offset_x
 
-
-
-
-
-        hexagon = QHexagon(positionx, positiony, 6, radius, angle)
+        hexagon = QHexagon(x, y, 6, radius, angle)
 
         return hexagon
 
@@ -215,11 +233,11 @@ class QHexagon(QtGui.QPolygonF):
     the position x and y denote the position relative to the current width and height
     """
 
-    def __init__(self, positionx, positiony, sides, radius, angle):
+    def __init__(self, x, y, sides, radius, angle):
         QtWidgets.QWidget.__init__(self)
         
-        self.positionx = positionx
-        self.positiony = positiony
+        self.x = x
+        self.y = y
         self.sides = sides
         self.radius = radius
         self.angle = angle
@@ -232,9 +250,9 @@ class QHexagon(QtGui.QPolygonF):
             t = w*i + self.angle
 
             # horizontal alignment
-            x = self.positionx + self.radius*math.cos(math.radians(t))
+            x = self.x + self.radius*math.cos(math.radians(t))
             # vertical alignment
-            y = self.positiony + self.radius*math.sin(math.radians(t))
+            y = self.y + self.radius*math.sin(math.radians(t))
 
             # add side to polygon
             self.append(QtCore.QPointF(x, y)) 
