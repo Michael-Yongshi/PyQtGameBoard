@@ -1,4 +1,5 @@
 import sys, math
+import collections
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -15,7 +16,25 @@ class QHexagonboard(QtWidgets.QFrame):
 
         # default parameters
         self.scale = 10 # 100%
-        self.focus = None
+        self.center = None
+        self.shiftfocus = QtCore.QPointF(0, 0)
+
+        # tile references
+        self.hexbyposition = collections.OrderedDict() # reference from a location on the widget to the tile that is drawn there
+        self.hexbygrid = collections.OrderedDict() # reference from the tile to the location on the widget it is drawn
+
+    def mousePressEvent(self, event):
+        
+        # print(f"mouse pressed at location {event.screenPos()}")
+        for x in self.hexbyposition:
+            if x > event.screenPos().x():
+                for y in self.hexbyposition[x]:
+                    if y > event.screenPos().y():
+                        selected_tile = self.hexbyposition[x][y]
+                        print(selected_tile)
+                        break
+                break
+        # print(self.hexbyposition)
 
     def wheelEvent(self, event):
 
@@ -26,7 +45,9 @@ class QHexagonboard(QtWidgets.QFrame):
         self.scale = scale if scale > 0 else self.scale
 
         # determine location of point to zoom in to / out from
-        self.focus = event.position()
+        self.shiftfocus = event.position() - self.center
+        # print(f"mouse position = {event.position()}")
+        # print(f"shift focus = {self.shiftfocus}")
 
         # update widget to trigger the paintEvent
         self.update()
@@ -42,18 +63,16 @@ class QHexagonboard(QtWidgets.QFrame):
         with 8 columns as the offset hexes are not counted for the same row.
         """
 
-        # if there is no focus point, focus on the center of the screen
-        if self.focus == None:
-            self.focus = QtCore.QPointF(self.geometry().width() / 2, self.geometry().height() / 2)
+        # set focus to center of screen
+        self.center = QtCore.QPointF(self.geometry().width() / 2, self.geometry().height() / 2)
 
         # select the painter
         painter = QtGui.QPainter(self)
 
         # draw the basis for the board
         self.paint_underlay(painter)
-
-        # draw all the overlays on top of the basis
         self.paint_overlays(painter)
+
 
     def paint_underlay(self, painter):
         """
@@ -78,6 +97,10 @@ class QHexagonboard(QtWidgets.QFrame):
                 
                 # create the hexagon at the specified location
                 hexagon = self.create_hexagon(row, column)
+
+                # save the positions given to this hexagon, to be able to look op locations of hexagons, for selecting or determining
+                self.hexbyposition.update({hexagon.x: {hexagon.y: [column, row]}})
+                self.hexbygrid.update({row: {column: QtCore.QPointF(hexagon.x, hexagon.y)}})
 
                 # draw the shape
                 painter.drawPolygon(hexagon)
@@ -140,7 +163,7 @@ class QHexagonboard(QtWidgets.QFrame):
             # set screen adjustments
             if self.relative == True:
                 # get relative position of tile against center of screen
-                # print(f"center = {self.focus}")
+                # print(f"center = {self.center}")
 
                 """
                 center is 683 (1366 / 2) width and 352 ((768 - 63) / 2) height (middle tile, 873 - 312)
@@ -149,8 +172,8 @@ class QHexagonboard(QtWidgets.QFrame):
                 radius is 2 * scale (10) = 20 pixels
                 """
 
-                screen_offset_x = self.focus.x() - ((self.columns / 2) * column_default)
-                screen_offset_y = self.focus.y() - ((self.rows / 2) * row_default)
+                screen_offset_x = self.center.x() - ((self.columns / 2) * column_default) + self.shiftfocus.x()
+                screen_offset_y = self.center.y() - ((self.rows / 2) * row_default) + self.shiftfocus.y()
                 # print(f"offset x = {screen_offset_x}")
                 # print(f"offset y = {screen_offset_y}")
 
@@ -181,10 +204,10 @@ class QHexagonboard(QtWidgets.QFrame):
             # set screen adjustments
             if self.relative == True:
                 # get relative position of tile against center of screen
-                # print(f"center = {self.focus}")
+                # print(f"center = {self.center}")
                 
-                screen_offset_x = self.focus.x() - ((self.columns / 2) * (2 * self.scale))
-                screen_offset_y = self.focus.y() - ((self.rows / 2) * (2 * self.scale))
+                screen_offset_x = self.center.x() - ((self.columns / 2) * (2 * self.scale))
+                screen_offset_y = self.center.y() - ((self.rows / 2) * (2 * self.scale))
                 # print(f"offset x = {screen_offset_x}")
                 # print(f"offset y = {screen_offset_y}")
 
@@ -310,6 +333,7 @@ def test_create_overlay():
     blockbrush = QtGui.QBrush(QtGui.QColor(0,0,0,255))
     blockpen = QtGui.QPen(QtGui.QColor(0,0,0), 3, QtCore.Qt.NoPen)
     blockdict = {
+        "Name": "block",
         "Brush": blockbrush,
         "Pen": blockpen,
         "Positions": [
@@ -324,6 +348,7 @@ def test_create_overlay():
     allybrush = QtGui.QBrush(QtGui.QColor(0,255,0,100))
     allypen = QtGui.QPen(QtGui.QColor(0,255,0), 0, QtCore.Qt.NoPen)
     allydict = {
+        "Name": "ally",
         "Brush": allybrush,
         "Pen": allypen,
         "Positions": [
@@ -336,6 +361,8 @@ def test_create_overlay():
     enemybrush = QtGui.QBrush(QtGui.QColor(255,0,0,100))
     enemypen = QtGui.QPen(QtGui.QColor(255,0,0), 0, QtCore.Qt.NoPen)
     enemydict = {
+        
+        "Name": "enemy",
         "Brush": enemybrush,
         "Pen": enemypen,
         "Positions": [
@@ -348,6 +375,7 @@ def test_create_overlay():
     coverbrush = QtGui.QBrush(QtGui.QColor(255,255,255,0))
     coverpen = QtGui.QPen(QtGui.QColor(0,0,0), 3, QtCore.Qt.DashLine)
     coverdict = {
+        "Name": "cover",
         "Brush": coverbrush,
         "Pen": coverpen,
         "Positions": [
