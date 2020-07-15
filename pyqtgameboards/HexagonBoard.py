@@ -15,6 +15,7 @@ class QHexagonboard(QtWidgets.QFrame):
 
         # default parameters
         self.scale = 10 # 100%
+        self.focus = None
 
     def wheelEvent(self, event):
 
@@ -25,7 +26,7 @@ class QHexagonboard(QtWidgets.QFrame):
         self.scale = scale if scale > 0 else self.scale
 
         # determine location of point to zoom in to / out from
-        self.target = event.position()
+        self.focus = event.position()
 
         # update widget to trigger the paintEvent
         self.update()
@@ -41,10 +42,9 @@ class QHexagonboard(QtWidgets.QFrame):
         with 8 columns as the offset hexes are not counted for the same row.
         """
 
-        # determine window size
-        self.center = QtCore.QPointF(self.geometry().width() / 2, self.geometry().height() / 2)
-        print(self.center)
-        print(self.scale)
+        # if there is no focus point, focus on the center of the screen
+        if self.focus == None:
+            self.focus = QtCore.QPointF(self.geometry().width() / 2, self.geometry().height() / 2)
 
         # select the painter
         painter = QtGui.QPainter(self)
@@ -140,7 +140,7 @@ class QHexagonboard(QtWidgets.QFrame):
             # set screen adjustments
             if self.relative == True:
                 # get relative position of tile against center of screen
-                # print(f"center = {self.center}")
+                # print(f"center = {self.focus}")
 
                 """
                 center is 683 (1366 / 2) width and 352 ((768 - 63) / 2) height (middle tile, 873 - 312)
@@ -149,8 +149,8 @@ class QHexagonboard(QtWidgets.QFrame):
                 radius is 2 * scale (10) = 20 pixels
                 """
 
-                screen_offset_x = self.center.x() - ((self.columns / 2) * column_default)
-                screen_offset_y = self.center.y() - ((self.rows / 2) * row_default)
+                screen_offset_x = self.focus.x() - ((self.columns / 2) * column_default)
+                screen_offset_y = self.focus.y() - ((self.rows / 2) * row_default)
                 # print(f"offset x = {screen_offset_x}")
                 # print(f"offset y = {screen_offset_y}")
 
@@ -181,10 +181,10 @@ class QHexagonboard(QtWidgets.QFrame):
             # set screen adjustments
             if self.relative == True:
                 # get relative position of tile against center of screen
-                # print(f"center = {self.center}")
+                # print(f"center = {self.focus}")
                 
-                screen_offset_x = self.center.x() - ((self.columns / 2) * (2 * self.scale))
-                screen_offset_y = self.center.y() - ((self.rows / 2) * (2 * self.scale))
+                screen_offset_x = self.focus.x() - ((self.columns / 2) * (2 * self.scale))
+                screen_offset_y = self.focus.y() - ((self.rows / 2) * (2 * self.scale))
                 # print(f"offset x = {screen_offset_x}")
                 # print(f"offset y = {screen_offset_y}")
 
