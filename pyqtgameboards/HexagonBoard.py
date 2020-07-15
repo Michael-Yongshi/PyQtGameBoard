@@ -19,22 +19,25 @@ class QHexagonboard(QtWidgets.QFrame):
         self.center = None
         self.shiftfocus = QtCore.QPointF(0, 0)
 
-        # tile references
-        self.hexbyposition = collections.OrderedDict() # reference from a location on the widget to the tile that is drawn there
-        self.hexbygrid = collections.OrderedDict() # reference from the tile to the location on the widget it is drawn
+        # reference from a location on the widget to the tile that is drawn there
+        self.columnbyx = collections.OrderedDict()
+        self.rowbyy = collections.OrderedDict()
+
+        # reference from the tile to the location on the widget it is drawn
+        self.xbycolumn = collections.OrderedDict()
+        self.ybyrow = collections.OrderedDict()
 
     def mousePressEvent(self, event):
         
-        # print(f"mouse pressed at location {event.screenPos()}")
-        for x in self.hexbyposition:
+        print(f"mouse pressed at location {event.screenPos()}")
+        for x in self.columnbyx:
             if x > event.screenPos().x():
-                for y in self.hexbyposition[x]:
+                for y in self.rowbyy:
                     if y > event.screenPos().y():
-                        selected_tile = self.hexbyposition[x][y]
+                        selected_tile = [self.columnbyx[x], self.rowbyy[y]]
                         print(selected_tile)
                         break
                 break
-        # print(self.hexbyposition)
 
     def wheelEvent(self, event):
 
@@ -73,6 +76,11 @@ class QHexagonboard(QtWidgets.QFrame):
         self.paint_underlay(painter)
         self.paint_overlays(painter)
 
+        # print("")
+        # print(self.hexbygrid)
+        # print("")
+        # print(self.hexbyposition)
+        # print("")
 
     def paint_underlay(self, painter):
         """
@@ -99,8 +107,13 @@ class QHexagonboard(QtWidgets.QFrame):
                 hexagon = self.create_hexagon(row, column)
 
                 # save the positions given to this hexagon, to be able to look op locations of hexagons, for selecting or determining
-                self.hexbyposition.update({hexagon.x: {hexagon.y: [column, row]}})
-                self.hexbygrid.update({row: {column: QtCore.QPointF(hexagon.x, hexagon.y)}})
+                self.columnbyx.update({hexagon.x: column})
+                self.rowbyy.update({hexagon.y: row})
+                self.xbycolumn.update({column: hexagon.x})
+                self.ybyrow.update({row: hexagon.y})
+
+                print(self.xbycolumn)
+                print(self.ybyrow)
 
                 # draw the shape
                 painter.drawPolygon(hexagon)
@@ -407,5 +420,5 @@ def main(frame):
 if __name__ == '__main__':
 
     # test_single_hexagon()
-    test_empty_board()
-    # test_overlay_board()
+    # test_empty_board()
+    test_overlay_board()
