@@ -27,18 +27,6 @@ class QHexagonboard(QtWidgets.QFrame):
         self.xbycolumn = collections.OrderedDict()
         self.ybyrow = collections.OrderedDict()
 
-    def mousePressEvent(self, event):
-        
-        print(f"mouse pressed at location {event.screenPos()}")
-        for x in self.columnbyx:
-            if x > event.screenPos().x():
-                for y in self.rowbyy:
-                    if y > event.screenPos().y():
-                        selected_tile = [self.columnbyx[x], self.rowbyy[y]]
-                        print(selected_tile)
-                        break
-                break
-
     def wheelEvent(self, event):
 
         # get delta of mousewheel scroll, default is 120 pixels, we devide by 12 to return 10 that calculates easier
@@ -76,12 +64,6 @@ class QHexagonboard(QtWidgets.QFrame):
         self.paint_underlay(painter)
         self.paint_overlays(painter)
 
-        # print("")
-        # print(self.hexbygrid)
-        # print("")
-        # print(self.hexbyposition)
-        # print("")
-
     def paint_underlay(self, painter):
         """
         The basis of the gameboard
@@ -104,16 +86,7 @@ class QHexagonboard(QtWidgets.QFrame):
             while column < self.columns:
                 
                 # create the hexagon at the specified location
-                hexagon = self.create_hexagon(row, column)
-
-                # save the positions given to this hexagon, to be able to look op locations of hexagons, for selecting or determining
-                self.columnbyx.update({hexagon.x: column})
-                self.rowbyy.update({hexagon.y: row})
-                self.xbycolumn.update({column: hexagon.x})
-                self.ybyrow.update({row: hexagon.y})
-
-                print(self.xbycolumn)
-                print(self.ybyrow)
+                hexagon = self.create_hexagon_shape(row, column)
 
                 # draw the shape
                 painter.drawPolygon(hexagon)
@@ -141,7 +114,7 @@ class QHexagonboard(QtWidgets.QFrame):
                 column = tile[1]
 
                 # create the hexagon at the specified location
-                hexagon = self.create_hexagon(row, column)
+                hexagon = self.create_hexagon_shape(row, column)
 
                 # set the style of this overlay
                 painter.setBrush(overlay["Brush"])
@@ -150,7 +123,7 @@ class QHexagonboard(QtWidgets.QFrame):
                 # draw the shape
                 painter.drawPolygon(hexagon)
 
-    def create_hexagon(self, row, column):
+    def create_hexagon_shape(self, row, column):
         """
         Method to easily determine the angle and position of a hexagon tile
         within a gameboard
@@ -236,6 +209,20 @@ class QHexagonboard(QtWidgets.QFrame):
         hexagon = QHexagon(x, y, 6, radius, angle)
 
         return hexagon
+
+# class QHexagonTile(QtWidgets.QFrame):
+#     def __init__(self, x, y, radius):
+#         QtWidgets.QFrame.__init__(self)
+
+#         self.geometry(x, y, radius * 2, radius * 2)
+
+#         lefttopwidget = QtWidgets.QWidget()
+
+#         middlewidget = QtWidgets.QWidget()
+#         middlewidget.geometry(x, y, radius * 2, radius * 2)
+
+#         rightbotwidget = QtWidgets.QWidget()
+
 
 class QHexagonFrame(QtWidgets.QFrame):
     def __init__(self):
