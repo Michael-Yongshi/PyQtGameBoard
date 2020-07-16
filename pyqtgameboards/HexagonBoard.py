@@ -39,7 +39,7 @@ class QHexagonboard(QtWidgets.QGraphicsView):
             defaultbrush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
             adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
             tiles = adjacent_tiles + [self.selected_tile]
-            self.paint_tiles(tiles, defaultbrush)
+            self.paint_tiles(tiles, brush = defaultbrush)
 
             # remove selection
             self.selected_tile = None
@@ -57,12 +57,12 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
         # paint the new tile
         selectbrush = QtGui.QBrush(QtGui.QColor(0,0,255,255))
-        self.paint_tiles([self.selected_tile], selectbrush)
+        self.paint_tiles([self.selected_tile], brush = selectbrush)
 
         # paint adjacent tiles
         adjacent_brush = QtGui.QBrush(QtGui.QColor(0,0,255,100))
         adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
-        self.paint_tiles(adjacent_tiles, adjacent_brush)
+        self.paint_tiles(adjacent_tiles, brush = adjacent_brush)
 
     def wheelEvent(self, event):
 
@@ -80,15 +80,17 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         The offset hexagons in between them, offset above and below, are in
         a different row. This means that 4 columns already look like a board
         with 8 columns as the offset hexes are not counted for the same row.
+
+        Overlays will be created according to the 'overlays' parameter
+        this is a list containing dicts of all overlays, which contains per overlay (dictionary)
+        - the fill / brush of the tile type (Brush),
+        - the pen / line details of the tile type (Pen) and
+        - a list of all the positions of the tile type (Positions)       
         """
 
         # set focus to center of screen
         self.center = QtCore.QPointF(self.geometry().width() / 2, self.geometry().height() / 2)
 
-        """
-        The basis of the gameboard
-        this method creates a hexagon for all the rows and columns
-        """
         #  default white background surrounded by a black 1 width line
         brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
         pen = QtGui.QPen(QtGui.QColor(0,0,0), 1, QtCore.Qt.SolidLine)
@@ -96,12 +98,14 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         # Create hexagons for all the rows and columns
         row = 1
         while row <= self.rows:
-            
+
             column = 1
             while column <= self.columns:
-                
+
                 # create the hexagon at the specified location
                 hexagon_shape = self.create_hexagon_shape(row, column)
+
+                # Create the background tile
                 tile = self.scene.addPolygon(hexagon_shape, pen, brush)
                 self.map_coordinates_by_tile[tile] = [row, column]
                 self.map_tile_by_coordinates[f"{row}-{column}"] = tile
@@ -109,25 +113,42 @@ class QHexagonboard(QtWidgets.QGraphicsView):
                 column += 1
             row += 1
 
-        """
-        Overlays will be created according to the 'overlays' parameter
-        this is a list containing dicts of all overlays, which contains per overlay (dictionary)
-        - the fill / brush of the tile type (Brush),
-        - the pen / line details of the tile type (Pen) and
-        - a list of all the positions of the tile type (Positions)
-        """
-
         # Create overlays
         for overlay in self.overlays:
-            for tile in overlay["Positions"]:
+            
+            # Get brush
+            if overlay["Brush"] != "":
+                brush = overlay["Brush"]
+            else:
+                brush = None
+
+            # Get pen
+            if overlay["Pen"] != "":
+                pen = overlay["Pen"]
+            else:
+                pen = None
+
+            # create tile list to paint for this overlay
+            overlay_tiles = []
+            
+            for overlay_coordinates in overlay["Positions"]:
 
                 # get position info from the tile list
-                row = tile[0]
-                column = tile[1]
+                overlay_coordinates_string = f"{overlay_coordinates[0]}-{overlay_coordinates[1]}"
 
-                # create the hexagon at the specified location
-                hexagon_shape = self.create_hexagon_shape(row, column)
-                tile = self.scene.addPolygon(hexagon_shape, overlay["Pen"], overlay["Brush"])
+                # get the respective tile
+                tile = self.map_tile_by_coordinates[overlay_coordinates_string]
+                
+                # move the tile on top of the background tiles
+                tile.setZValue(1)
+                
+                # add to the overlay tiles
+                overlay_tiles.append(tile)
+
+            # paint all the respective tiles
+            self.paint_tiles(overlay_tiles, pen, brush)
+
+        print(f"board painted")
 
     def create_hexagon_shape(self, row, column):
         """
@@ -249,69 +270,19 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         
         return adjacent_tiles
 
-    def paint_tiles(self, tiles, brush):
+    def paint_tiles(self, tiles, pen = None, brush = None):
 
         for tile in tiles:
-            tile.setBrush(brush)
-            tile.update()
+            self.paint_tile(tile, pen, brush)
 
-class QHexagonShape(QtGui.QPolygonF):
-    """
-    polygon with number of sides, a radius, angle of the first point
-    hexagon is made with 6 sides
-    radius denotes the size of the shape, 
-    angle of 
-    0 makes a horizontal aligned hexagon (first point points flat), 
-    90 makes a vertical aligned hexagon (first point points upwards)
-
-    The hexagon needs the width and height of the current widget or window 
-    in order to place itself. 
-    the position x and y denote the position relative to the current width and height
-    """
-
-    def __init__(self, x, y, radius, angle):
-        QtWidgets.QWidget.__init__(self)
+    def paint_tile(self, tile, pen = None, brush = None):
+        if pen != None:
+            tile.setPen(pen)
         
-        self.x = x
-        self.y = y
-        self.sides = 6
-        self.radius = radius
-        self.angle = angle
-
-        # angle per step
-        w = 360/self.sides
-
-        # add the points of polygon per side
-        for i in range(self.sides):
-            t = w*i + self.angle
-
-            # horizontal alignment
-            x = self.x + self.radius*math.cos(math.radians(t))
-            # vertical alignment
-            y = self.y + self.radius*math.sin(math.radians(t))
-
-            # add side to polygon
-            self.append(QtCore.QPointF(x, y)) 
-
-
-    @QtCore.pyqtSlot()
-    def zoom_in(self):
-        scale_tr = QtGui.QTransform()
-        scale_tr.scale(self, self.factor)
-
-        tr = self.view.transform() * scale_tr
-        self.view.setTransform(tr)
-
-    @QtCore.pyqtSlot()
-    def zoom_out(self):
-        scale_tr = QtGui.QTransform()
-        scale_tr.scale(self.factor, self.factor)
-
-        scale_inverted, invertible = scale_tr.inverted()
-
-        if invertible:
-            tr = self._view.transform() * scale_inverted
-            self.view.setTransform(tr)
+        if brush != None:
+            tile.setBrush(brush)
+        
+        tile.update()
 
 class QHexagonTile(QtWidgets.QGraphicsPolygonItem):
 
@@ -352,25 +323,43 @@ class QHexagonTile(QtWidgets.QGraphicsPolygonItem):
             # add side to polygon
             self.append(QtCore.QPointF(x, y)) 
 
+class QHexagonShape(QtGui.QPolygonF):
+    """
+    polygon with number of sides, a radius, angle of the first point
+    hexagon is made with 6 sides
+    radius denotes the size of the shape, 
+    angle of 
+    0 makes a horizontal aligned hexagon (first point points flat), 
+    90 makes a vertical aligned hexagon (first point points upwards)
 
-    @QtCore.pyqtSlot()
-    def zoom_in(self):
-        scale_tr = QtGui.QTransform()
-        scale_tr.scale(self, self.factor)
+    The hexagon needs the width and height of the current widget or window 
+    in order to place itself. 
+    the position x and y denote the position relative to the current width and height
+    """
 
-        tr = self.view.transform() * scale_tr
-        self.view.setTransform(tr)
+    def __init__(self, x, y, radius, angle):
+        QtWidgets.QWidget.__init__(self)
+        
+        self.x = x
+        self.y = y
+        self.sides = 6
+        self.radius = radius
+        self.angle = angle
 
-    @QtCore.pyqtSlot()
-    def zoom_out(self):
-        scale_tr = QtGui.QTransform()
-        scale_tr.scale(self.factor, self.factor)
+        # angle per step
+        w = 360/self.sides
 
-        scale_inverted, invertible = scale_tr.inverted()
+        # add the points of polygon per side
+        for i in range(self.sides):
+            t = w*i + self.angle
 
-        if invertible:
-            tr = self._view.transform() * scale_inverted
-            self.view.setTransform(tr)
+            # horizontal alignment
+            x = self.x + self.radius*math.cos(math.radians(t))
+            # vertical alignment
+            y = self.y + self.radius*math.sin(math.radians(t))
+
+            # add side to polygon
+            self.append(QtCore.QPointF(x, y)) 
 
 def test_empty_board():
     
@@ -397,11 +386,10 @@ def test_create_overlay():
     overlays = []
 
     blockbrush = QtGui.QBrush(QtGui.QColor(0,0,0,255))
-    blockpen = QtGui.QPen(QtGui.QColor(0,0,0), 3, QtCore.Qt.NoPen)
     blockdict = {
         "Name": "block",
         "Brush": blockbrush,
-        "Pen": blockpen,
+        "Pen": "",
         "Positions": [
             [2, 6],
             [3, 6],
@@ -411,38 +399,10 @@ def test_create_overlay():
     }
     overlays.append(blockdict)
 
-    allybrush = QtGui.QBrush(QtGui.QColor(0,255,0,100))
-    allypen = QtGui.QPen(QtGui.QColor(0,255,0), 0, QtCore.Qt.NoPen)
-    allydict = {
-        "Name": "ally",
-        "Brush": allybrush,
-        "Pen": allypen,
-        "Positions": [
-            [1, 3], 
-            [4, 3],
-        ],
-    }
-    overlays.append(allydict)
-
-    enemybrush = QtGui.QBrush(QtGui.QColor(255,0,0,100))
-    enemypen = QtGui.QPen(QtGui.QColor(255,0,0), 0, QtCore.Qt.NoPen)
-    enemydict = {
-        
-        "Name": "enemy",
-        "Brush": enemybrush,
-        "Pen": enemypen,
-        "Positions": [
-            [2, 3],
-            [5, 6],
-        ],
-    }
-    overlays.append(enemydict)
-
-    coverbrush = QtGui.QBrush(QtGui.QColor(255,255,255,0))
     coverpen = QtGui.QPen(QtGui.QColor(0,0,0), 3, QtCore.Qt.DashLine)
     coverdict = {
         "Name": "cover",
-        "Brush": coverbrush,
+        "Brush": "",
         "Pen": coverpen,
         "Positions": [
             [2, 2],
@@ -451,6 +411,30 @@ def test_create_overlay():
         ],
     }
     overlays.append(coverdict)
+
+    allybrush = QtGui.QBrush(QtGui.QColor(0,255,0,100))
+    allydict = {
+        "Name": "ally",
+        "Brush": allybrush,
+        "Pen": "",
+        "Positions": [
+            [1, 3], 
+            [4, 3],
+        ],
+    }
+    overlays.append(allydict)
+
+    enemybrush = QtGui.QBrush(QtGui.QColor(255,0,0,100))
+    enemydict = {
+        "Name": "enemy",
+        "Brush": enemybrush,
+        "Pen": "",
+        "Positions": [
+            [2, 3],
+            [5, 6],
+        ],
+    }
+    overlays.append(enemydict)
 
     return overlays
 
