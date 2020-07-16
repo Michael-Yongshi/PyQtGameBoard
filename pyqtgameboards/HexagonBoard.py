@@ -23,48 +23,78 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
         self.map_coordinates_by_tile = {}
         self.map_tile_by_coordinates = {}
-        self.selected_tile = None
 
         # build board and set to this widget
         self.scene = QtWidgets.QGraphicsScene()
         self.build_board_scene()
         self.setScene(self.scene)
 
+        # selections and stuff
+        self.selected_tile = None
+        self.target_tile = None
+        self.line_of_sight = None
+
     def mousePressEvent(self, event):
 
-        # remove selection of current selected tile
-        if self.selected_tile != None:  
-            
-            # repaint selected tile and adjacent tiles to default
-            defaultbrush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
-            adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
-            tiles = adjacent_tiles + [self.selected_tile]
-            self.paint_graphic_items(tiles, brush = defaultbrush)
-
-            # remove selection
-            self.selected_tile = None
+        # store current selected tile
+        current_tile = self.selected_tile
 
         # get position (of pixel clicked)
         position = self.mapToScene(event.pos())
         # print(f"tile selected at position {position}")
 
         # associated tile graphic_item
-        self.selected_tile = self.scene.itemAt(position, QtGui.QTransform())
-        if self.selected_tile == None:
-            return
-            
-        # coordinates of this tile
-        # coordinates = self.get_tile_grid_location(self.selected_tile)
-        # print(f"tile selected at coordinates {coordinates}")
+        new_tile = self.scene.itemAt(position, QtGui.QTransform())
 
-        # paint the new tile
-        selectbrush = QtGui.QBrush(QtGui.QColor(0,0,255,255))
-        self.paint_graphic_items([self.selected_tile], brush = selectbrush)
+        # remove selection of current selected tile
+        if new_tile == None:
 
-        # paint adjacent tiles
-        adjacent_brush = QtGui.QBrush(QtGui.QColor(0,0,255,100))
-        adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
-        self.paint_graphic_items(adjacent_tiles, brush = adjacent_brush)
+            # repaint selected tile and adjacent tiles to default
+            defaultbrush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
+            adjacent_tiles = self.get_adjacent_tiles(current_tile)
+            tiles = adjacent_tiles + [current_tile] + [self.target_tile]
+            self.paint_graphic_items(tiles, brush = defaultbrush)
+
+            # remove selection
+            self.selected_tile = None
+            self.target_tile = None
+
+            if self.line_of_sight != None:
+                self.scene.removeItem(self.line_of_sight)
+                self.line_of_sight = None
+
+        elif new_tile != None:
+            if current_tile == None:
+                # coordinates of this tile
+                # coordinates = self.get_tile_grid_location(new_tile)
+                # print(f"tile selected at coordinates {coordinates}")
+
+                # paint the new tile
+                selectbrush = QtGui.QBrush(QtGui.QColor(0,0,255,255))
+                self.paint_graphic_items([new_tile], brush = selectbrush)
+
+                # paint adjacent tiles
+                adjacent_brush = QtGui.QBrush(QtGui.QColor(0,0,255,100))
+                adjacent_tiles = self.get_adjacent_tiles(new_tile)
+                self.paint_graphic_items(adjacent_tiles, brush = adjacent_brush)
+
+                # make new tile the selected tile
+                self.selected_tile = new_tile
+
+            elif current_tile != None:
+
+                if self.line_of_sight != None:
+                    self.scene.removeItem(self.line_of_sight)
+                    self.line_of_sight = None
+
+                self.create_line_of_sight(originobject=current_tile, targetobject=new_tile)
+
+                if self.target_tile != None:
+                    self.rebuild_tile(self.target_tile)
+
+                self.target_tile = new_tile
+                target_brush = QtGui.QBrush(QtGui.QColor(255,255,0,100))
+                self.paint_graphic_item(new_tile, brush = target_brush)
 
     def wheelEvent(self, event):
 
@@ -93,6 +123,11 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         # set focus to center of screen
         self.center = QtCore.QPointF(self.geometry().width() / 2, self.geometry().height() / 2)
 
+        self.build_tiles()
+        self.build_overlays()
+
+    def build_tiles(self):
+
         #  default white background surrounded by a black 1 width line
         brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
         pen = QtGui.QPen(QtGui.QColor(0,0,0), 1, QtCore.Qt.SolidLine)
@@ -114,6 +149,8 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
                 column += 1
             row += 1
+
+    def build_overlays(self):
 
         # Create overlays
         for overlay in self.overlays:
@@ -149,6 +186,40 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
             # paint all the respective tiles
             self.paint_graphic_items(overlay_tiles, pen, brush)
+
+    def rebuild_tile(self, tile):
+
+        tile_coordinates = self.map_coordinates_by_tile[tile]
+
+        #  default white background surrounded by a black 1 width line
+        brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
+        pen = QtGui.QPen(QtGui.QColor(0,0,0), 1, QtCore.Qt.SolidLine)
+        
+        # repaint the tile
+        self.paint_graphic_item(tile, pen, brush)
+
+        # Create overlays
+        for overlay in self.overlays:
+            
+            # Get brush
+            if overlay["Brush"] != "":
+                brush = overlay["Brush"]
+            else:
+                brush = None
+
+            # Get pen
+            if overlay["Pen"] != "":
+                pen = overlay["Pen"]
+            else:
+                pen = None
+          
+            for overlay_coordinates in overlay["Positions"]:
+                if overlay_coordinates == tile_coordinates:
+                                
+                    # repaint the tile
+                    self.paint_graphic_item(tile, pen, brush)
+                    
+                    break
 
     def create_hexagon_shape(self, row, column):
         """
@@ -264,9 +335,11 @@ class QHexagonboard(QtWidgets.QGraphicsView):
             adjacent_coordinate = [coordinates[0] + offset[0], coordinates[1] + offset[1]]
             # print(adjacent_coordinate)
 
-            if adjacent_coordinate[0] >= 1 and adjacent_coordinate[1] >= 1:
+            try:
                 tile = self.map_tile_by_coordinates[f"{adjacent_coordinate[0]}-{adjacent_coordinate[1]}"]
                 adjacent_tiles.append(tile)
+            except:
+                pass
         
         return adjacent_tiles
 
@@ -283,6 +356,24 @@ class QHexagonboard(QtWidgets.QGraphicsView):
             graphic_item.setBrush(brush)
         
         graphic_item.update()
+
+    def create_line_of_sight(self, originobject, targetobject):
+
+        origin_center_x = originobject.boundingRect().center().x()
+        origin_center_y = originobject.boundingRect().center().y()
+        target_center_x = targetobject.boundingRect().center().x()
+        target_center_y = targetobject.boundingRect().center().y()
+
+        pen = QtGui.QPen(QtGui.QColor(0,0,0), 3, QtCore.Qt.DotLine)
+
+        self.line_of_sight = self.scene.addLine(
+            origin_center_x,
+            origin_center_y,
+            target_center_x,
+            target_center_y,
+            pen,
+            )
+        
 
 class QHexagonTile(QtWidgets.QGraphicsPolygonItem):
 
