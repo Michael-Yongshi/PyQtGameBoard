@@ -104,14 +104,6 @@ class QHexagonboard(QtWidgets.QGraphicsView):
                 # Create a line of sight between the selected tile and the target tile
                 self.create_line_of_sight(originobject=self.selected_tile, targetobject=self.target_tile)
 
-                # find all the tiles that are collided with the line of sight
-                colliding_items = (self.scene.collidingItems(self.line_of_sight))
-                index_selected = colliding_items.index(self.selected_tile)
-                colliding_items.pop(index_selected)
-                index_target = colliding_items.index(self.target_tile)
-                colliding_items.pop(index_target)
-                print(self.get_tiles_grid_location(colliding_items))
-
     def wheelEvent(self, event):
 
         # get delta of mousewheel scroll, default is 120 pixels, we devide by 1200 to return 0.10 to get the zoom factor
@@ -394,7 +386,7 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         target_center_x = targetobject.boundingRect().center().x()
         target_center_y = targetobject.boundingRect().center().y()
 
-        pen = QtGui.QPen(QtGui.QColor(0,0,0), 3, QtCore.Qt.DotLine)
+        pen = QtGui.QPen(QtGui.QColor(0,0,0), 1, QtCore.Qt.NoPen)
 
         self.line_of_sight = self.scene.addLine(
             origin_center_x,
@@ -404,6 +396,19 @@ class QHexagonboard(QtWidgets.QGraphicsView):
             pen,
             )
         
+        # find all the tiles that are collided with the line of sight
+        colliding_items = (self.scene.collidingItems(self.line_of_sight))
+
+        # delete selected and target tile from list
+        index_selected = colliding_items.index(self.selected_tile)
+        colliding_items.pop(index_selected)
+        index_target = colliding_items.index(self.target_tile)
+        colliding_items.pop(index_target)
+
+        coordinate_list = self.get_tiles_grid_location(colliding_items)
+        print(coordinate_list)
+
+        return coordinate_list
 
 class QHexagonTile(QtWidgets.QGraphicsPolygonItem):
 
