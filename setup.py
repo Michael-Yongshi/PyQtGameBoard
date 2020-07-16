@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="yongshi-pyqtgameboard",
-    version="0.2.2",
+    version="0.2.3",
     author="Michael-Yongshi",
     author_email="4registration@outlook.com",
     description="A gameboard widget for pyqt gui's package",

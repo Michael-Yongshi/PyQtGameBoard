@@ -3,8 +3,9 @@ PyQt5 widget that draws a board on the screen to include in games or map drawing
 
 ## Version
 ### 0.2
-0.2.2 - Redone building board, zooming in / out and added selection of tile with drawing adjacent tiles
-0.2.3 - adds line of sight line and return tiles touched
+0.2.2   Redone building board, zooming in / out and added selection of tile with drawing adjacent tiles
+0.2.3   working on fixing selection deleting previous overlays
+        working on adding line of sight line and return tiles touched
 
 ## Install
 ```

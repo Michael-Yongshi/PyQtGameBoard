@@ -50,7 +50,9 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
         # associated tile graphic_item
         self.selected_tile = self.scene.itemAt(position, QtGui.QTransform())
-
+        if self.selected_tile == None:
+            return
+            
         # coordinates of this tile
         # coordinates = self.get_tile_grid_location(self.selected_tile)
         # print(f"tile selected at coordinates {coordinates}")
