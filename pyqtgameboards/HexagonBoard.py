@@ -148,8 +148,6 @@ class QHexagonboard(QtWidgets.QGraphicsView):
             # paint all the respective tiles
             self.paint_tiles(overlay_tiles, pen, brush)
 
-        print(f"board painted")
-
     def create_hexagon_shape(self, row, column):
         """
         Method to easily determine the angle and position of a hexagon tile
