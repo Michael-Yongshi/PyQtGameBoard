@@ -1,6 +1,10 @@
 # PyQtGameBoard
 PyQt5 widget that draws a board on the screen to include in games or map drawing application.
 
+## Version
+### 0.2
+0.2.2 - Redone building board, zooming in / out and added selection of tile with drawing adjacent tiles
+
 ## Install
 ```
 pip install yongshi-pyqtgameboard
@@ -15,7 +19,14 @@ from pyqtgameboards.HexagonBoard import QHexagonboard
 to try out, copying the following to open a widget with a gameboard
 This is a gameboard of 20 rows and 10 columns (feels like 20, as it only counts tiles at the same height)
 This example creates designated tiles that receive a green fill with a thick green line
+
 ```
+import sys
+
+from PyQt5 import QtWidgets, QtGui, QtCore
+
+from pyqtgameboards.HexagonBoard import QHexagonboard
+
 if __name__ == '__main__':
 
     overlays = []
@@ -26,7 +37,7 @@ if __name__ == '__main__':
         "Brush": overlay1brush,
         "Pen": overlay1pen,
         "Positions": [
-            [0, 0], 
+            [1, 1], 
             [2, 1],
             [1, 2],
             [3, 3],
@@ -43,7 +54,7 @@ if __name__ == '__main__':
         horizontal = True, 
         rows = 20, 
         columns = 10,
-        overlays = [],
+        overlays = overlays,
         ))
 
     main.showMaximized()
