@@ -33,6 +33,7 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         self.selected_tile = None
         self.target_tile = None
         self.line_of_sight = None
+        self.colliding_items = None
 
     def mousePressEvent(self, event):
 
@@ -56,9 +57,6 @@ class QHexagonboard(QtWidgets.QGraphicsView):
                 # add the adjacent tiles
                 tiles += self.get_adjacent_tiles(current_tile)
 
-                # get default brush and use on the tiles
-                self.rebuild_tiles(tiles)
-
                 # remove selection
                 self.selected_tile = None
                 self.target_tile = None
@@ -67,20 +65,19 @@ class QHexagonboard(QtWidgets.QGraphicsView):
                     self.scene.removeItem(self.line_of_sight)
                     self.line_of_sight = None
 
+                if self.colliding_items != None:
+                    tiles += self.colliding_items
+
+                # rebuild the tiles
+                self.rebuild_tiles(tiles)
+
         elif new_tile != None:
+
             if current_tile == None:
-                # coordinates of this tile
-                # coordinates = self.get_tile_grid_location(new_tile)
-                # print(f"tile selected at coordinates {coordinates}")
 
                 # paint the new tile
                 selectbrush = QtGui.QBrush(QtGui.QColor(0,0,255,255))
                 self.paint_graphic_items([new_tile], brush = selectbrush)
-
-                # paint adjacent tiles
-                adjacent_brush = QtGui.QBrush(QtGui.QColor(0,0,255,100))
-                adjacent_tiles = self.get_adjacent_tiles(new_tile)
-                self.paint_graphic_items(adjacent_tiles, brush = adjacent_brush)
 
                 # make new tile the selected tile
                 self.selected_tile = new_tile
@@ -101,8 +98,23 @@ class QHexagonboard(QtWidgets.QGraphicsView):
                     self.scene.removeItem(self.line_of_sight)
                     self.line_of_sight = None
 
-                # Create a line of sight between the selected tile and the target tile
-                self.create_line_of_sight(originobject=self.selected_tile, targetobject=self.target_tile)
+                # rebuild the collided items with this line
+                if self.colliding_items != None:
+                    self.rebuild_tiles(self.colliding_items)
+
+                # Create a new line of sight between the selected tile and the target tile
+                self.colliding_items = self.create_line_of_sight(
+                    originobject=self.selected_tile,
+                    targetobject=self.target_tile,
+                    )
+                collide_brush = QtGui.QBrush(QtGui.QColor(50,50,50,100))
+                self.paint_graphic_items(self.colliding_items, brush = collide_brush)
+
+            # paint adjacent tiles
+            adjacent_brush = QtGui.QBrush(QtGui.QColor(0,0,255,100))
+            adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
+            self.paint_graphic_items(adjacent_tiles, brush = adjacent_brush)
+
 
     def wheelEvent(self, event):
 
@@ -405,10 +417,11 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         index_target = colliding_items.index(self.target_tile)
         colliding_items.pop(index_target)
 
+        # get an array of the coordinates in order to print
         coordinate_list = self.get_tiles_grid_location(colliding_items)
         print(coordinate_list)
 
-        return coordinate_list
+        return colliding_items
 
 class QHexagonTile(QtWidgets.QGraphicsPolygonItem):
 
