@@ -39,7 +39,7 @@ class QHexagonboard(QtWidgets.QGraphicsView):
             defaultbrush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
             adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
             tiles = adjacent_tiles + [self.selected_tile]
-            self.paint_tiles(tiles, brush = defaultbrush)
+            self.paint_graphic_items(tiles, brush = defaultbrush)
 
             # remove selection
             self.selected_tile = None
@@ -48,7 +48,7 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         position = self.mapToScene(event.pos())
         # print(f"tile selected at position {position}")
 
-        # associated tile object
+        # associated tile graphic_item
         self.selected_tile = self.scene.itemAt(position, QtGui.QTransform())
 
         # coordinates of this tile
@@ -57,12 +57,12 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
         # paint the new tile
         selectbrush = QtGui.QBrush(QtGui.QColor(0,0,255,255))
-        self.paint_tiles([self.selected_tile], brush = selectbrush)
+        self.paint_graphic_items([self.selected_tile], brush = selectbrush)
 
         # paint adjacent tiles
         adjacent_brush = QtGui.QBrush(QtGui.QColor(0,0,255,100))
         adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
-        self.paint_tiles(adjacent_tiles, brush = adjacent_brush)
+        self.paint_graphic_items(adjacent_tiles, brush = adjacent_brush)
 
     def wheelEvent(self, event):
 
@@ -146,7 +146,7 @@ class QHexagonboard(QtWidgets.QGraphicsView):
                 overlay_tiles.append(tile)
 
             # paint all the respective tiles
-            self.paint_tiles(overlay_tiles, pen, brush)
+            self.paint_graphic_items(overlay_tiles, pen, brush)
 
     def create_hexagon_shape(self, row, column):
         """
@@ -268,19 +268,19 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         
         return adjacent_tiles
 
-    def paint_tiles(self, tiles, pen = None, brush = None):
+    def paint_graphic_items(self, graphic_items, pen = None, brush = None):
 
-        for tile in tiles:
-            self.paint_tile(tile, pen, brush)
+        for graphic_item in graphic_items:
+            self.paint_graphic_item(graphic_item, pen, brush)
 
-    def paint_tile(self, tile, pen = None, brush = None):
+    def paint_graphic_item(self, graphic_item, pen = None, brush = None):
         if pen != None:
-            tile.setPen(pen)
+            graphic_item.setPen(pen)
         
         if brush != None:
-            tile.setBrush(brush)
+            graphic_item.setBrush(brush)
         
-        tile.update()
+        graphic_item.update()
 
 class QHexagonTile(QtWidgets.QGraphicsPolygonItem):
 
