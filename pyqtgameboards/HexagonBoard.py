@@ -21,8 +21,9 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         self.center = None
         self.shiftfocus = QtCore.QPointF(0, 0)
 
-        self.tiles = {}
-        self.selected_overlay = {}
+        self.map_coordinates_by_tile = {}
+        self.map_tile_by_coordinates = {}
+        self.selected_tile = None
 
         # build board and set to this widget
         self.scene = QtWidgets.QGraphicsScene()
@@ -31,21 +32,37 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
     def mousePressEvent(self, event):
 
-        selectbrush = QtGui.QBrush(QtGui.QColor(0,0,255,255))
-        selectpen = QtGui.QPen(QtGui.QColor(0,0,0), 3, QtCore.Qt.NoPen)
-        selectpainter = QtGui.QPainter()
-        selectpainter.setPen(selectpen)
-        selectpainter.setBrush(selectbrush)
+        # remove selection of current selected tile
+        if self.selected_tile != None:  
+            
+            # repaint selected tile and adjacent tiles to default
+            defaultbrush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
+            adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
+            tiles = adjacent_tiles + [self.selected_tile]
+            self.paint_tiles(tiles, defaultbrush)
 
+            # remove selection
+            self.selected_tile = None
+
+        # get position (of pixel clicked)
         position = self.mapToScene(event.pos())
-        selected_tile = self.scene.itemAt(position, QtGui.QTransform())
-        for tile in self.tiles:
-            if tile == selected_tile:
-                print(self.tiles[tile])
-                selected_tile.setBrush(selectbrush)
-                selected_tile.update()
-                break
+        # print(f"tile selected at position {position}")
 
+        # associated tile object
+        self.selected_tile = self.scene.itemAt(position, QtGui.QTransform())
+
+        # coordinates of this tile
+        # coordinates = self.get_tile_grid_location(self.selected_tile)
+        # print(f"tile selected at coordinates {coordinates}")
+
+        # paint the new tile
+        selectbrush = QtGui.QBrush(QtGui.QColor(0,0,255,255))
+        self.paint_tiles([self.selected_tile], selectbrush)
+
+        # paint adjacent tiles
+        adjacent_brush = QtGui.QBrush(QtGui.QColor(0,0,255,100))
+        adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
+        self.paint_tiles(adjacent_tiles, adjacent_brush)
 
     def wheelEvent(self, event):
 
@@ -68,36 +85,30 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         # set focus to center of screen
         self.center = QtCore.QPointF(self.geometry().width() / 2, self.geometry().height() / 2)
 
-        # draw the basis for the board
-        self.build_underlay()
-        self.build_overlays()
-
-    def build_underlay(self):
         """
         The basis of the gameboard
         this method creates a hexagon for all the rows and columns
         """
-
         #  default white background surrounded by a black 1 width line
         brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
         pen = QtGui.QPen(QtGui.QColor(0,0,0), 1, QtCore.Qt.SolidLine)
         
         # Create hexagons for all the rows and columns
-        row = 0
-        while row < self.rows:
+        row = 1
+        while row <= self.rows:
             
-            column = 0
-            while column < self.columns:
+            column = 1
+            while column <= self.columns:
                 
                 # create the hexagon at the specified location
                 hexagon_shape = self.create_hexagon_shape(row, column)
                 tile = self.scene.addPolygon(hexagon_shape, pen, brush)
-                self.tiles[tile] = [row, column]
+                self.map_coordinates_by_tile[tile] = [row, column]
+                self.map_tile_by_coordinates[f"{row}-{column}"] = tile
 
                 column += 1
             row += 1
 
-    def build_overlays(self):
         """
         Overlays will be created according to the 'overlays' parameter
         this is a list containing dicts of all overlays, which contains per overlay (dictionary)
@@ -107,9 +118,7 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         """
 
         # Create overlays
-        overlays = self.overlays + self.selected_overlay if self.selected_overlay != {} else self.overlays
-
-        for overlay in overlays:
+        for overlay in self.overlays:
             for tile in overlay["Positions"]:
 
                 # get position info from the tile list
@@ -199,6 +208,52 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         hexagon_shape = QHexagonShape(x, y, radius, angle)
 
         return hexagon_shape
+
+    def get_tile_grid_location(self, target_tile):
+        for tile in self.map_coordinates_by_tile:
+            if tile == target_tile:
+                coordinates = self.map_coordinates_by_tile[tile]
+                return coordinates
+
+    def get_adjacent_tiles(self, target_tile):
+        adjacent_tiles = []
+        coordinates = self.get_tile_grid_location(target_tile)
+
+        # adjacent coordinates
+        if coordinates[0] % 2 == 0:
+            adjacent_offset = [
+                [-2,0], # top
+                [-1,-1], # topleft
+                [1,-1], # leftdown
+                [2,0], # down
+                [1,0], # rightdown
+                [-1,0], # rightup
+            ]
+        else:
+            adjacent_offset = [
+                [-2,0], # top
+                [-1,0], # topleft
+                [1,0], # leftdown
+                [2,0], # down
+                [1,1], # rightdown
+                [-1,1], # rightup
+            ]
+
+        for offset in adjacent_offset:
+            adjacent_coordinate = [coordinates[0] + offset[0], coordinates[1] + offset[1]]
+            # print(adjacent_coordinate)
+
+            if adjacent_coordinate[0] >= 1 and adjacent_coordinate[1] >= 1:
+                tile = self.map_tile_by_coordinates[f"{adjacent_coordinate[0]}-{adjacent_coordinate[1]}"]
+                adjacent_tiles.append(tile)
+        
+        return adjacent_tiles
+
+    def paint_tiles(self, tiles, brush):
+
+        for tile in tiles:
+            tile.setBrush(brush)
+            tile.update()
 
 class QHexagonShape(QtGui.QPolygonF):
     """
