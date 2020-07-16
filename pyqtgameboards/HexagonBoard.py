@@ -48,20 +48,24 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
         # remove selection of current selected tile
         if new_tile == None:
+            if current_tile != None:
+                
+                # check if there is a target tile to wipe
+                tiles = [current_tile] + [self.target_tile] if self.target_tile != None else [current_tile]
 
-            # repaint selected tile and adjacent tiles to default
-            defaultbrush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
-            adjacent_tiles = self.get_adjacent_tiles(current_tile)
-            tiles = adjacent_tiles + [current_tile] + [self.target_tile]
-            self.paint_graphic_items(tiles, brush = defaultbrush)
+                # add the adjacent tiles
+                tiles += self.get_adjacent_tiles(current_tile)
 
-            # remove selection
-            self.selected_tile = None
-            self.target_tile = None
+                # get default brush and use on the tiles
+                self.rebuild_tiles(tiles)
 
-            if self.line_of_sight != None:
-                self.scene.removeItem(self.line_of_sight)
-                self.line_of_sight = None
+                # remove selection
+                self.selected_tile = None
+                self.target_tile = None
+
+                if self.line_of_sight != None:
+                    self.scene.removeItem(self.line_of_sight)
+                    self.line_of_sight = None
 
         elif new_tile != None:
             if current_tile == None:
@@ -83,18 +87,30 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
             elif current_tile != None:
 
+                # if there is a target tile already, rebuild that tile
+                if self.target_tile != None:
+                    self.rebuild_tile(self.target_tile)
+
+                # set the new tile as the target tile and paint it accordingly
+                self.target_tile = new_tile
+                target_brush = QtGui.QBrush(QtGui.QColor(255,255,0,100))
+                self.paint_graphic_item(new_tile, brush = target_brush)
+
+                # Remove any existing line of sight line
                 if self.line_of_sight != None:
                     self.scene.removeItem(self.line_of_sight)
                     self.line_of_sight = None
 
-                self.create_line_of_sight(originobject=current_tile, targetobject=new_tile)
+                # Create a line of sight between the selected tile and the target tile
+                self.create_line_of_sight(originobject=self.selected_tile, targetobject=self.target_tile)
 
-                if self.target_tile != None:
-                    self.rebuild_tile(self.target_tile)
-
-                self.target_tile = new_tile
-                target_brush = QtGui.QBrush(QtGui.QColor(255,255,0,100))
-                self.paint_graphic_item(new_tile, brush = target_brush)
+                # find all the tiles that are collided with the line of sight
+                colliding_items = (self.scene.collidingItems(self.line_of_sight))
+                index_selected = colliding_items.index(self.selected_tile)
+                colliding_items.pop(index_selected)
+                index_target = colliding_items.index(self.target_tile)
+                colliding_items.pop(index_target)
+                print(self.get_tiles_grid_location(colliding_items))
 
     def wheelEvent(self, event):
 
@@ -186,6 +202,11 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
             # paint all the respective tiles
             self.paint_graphic_items(overlay_tiles, pen, brush)
+
+    def rebuild_tiles(self, tiles):
+
+        for tile in tiles:
+            self.rebuild_tile(tile)
 
     def rebuild_tile(self, tile):
 
@@ -301,9 +322,18 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
         return hexagon_shape
 
-    def get_tile_grid_location(self, target_tile):
-        for tile in self.map_coordinates_by_tile:
-            if tile == target_tile:
+    def get_tiles_grid_location(self, tiles):
+
+        coordinate_list = []
+        for tile in tiles:
+            coordinates = self.get_tile_grid_location(tile)
+            coordinate_list.append(coordinates)
+
+        return coordinate_list
+
+    def get_tile_grid_location(self, tile):
+        for graphics_item in self.map_coordinates_by_tile:
+            if graphics_item == tile:
                 coordinates = self.map_coordinates_by_tile[tile]
                 return coordinates
 
