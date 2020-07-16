@@ -115,7 +115,6 @@ class QHexagonboard(QtWidgets.QGraphicsView):
             adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
             self.paint_graphic_items(adjacent_tiles, brush = adjacent_brush)
 
-
     def wheelEvent(self, event):
 
         # get delta of mousewheel scroll, default is 120 pixels, we devide by 1200 to return 0.10 to get the zoom factor
