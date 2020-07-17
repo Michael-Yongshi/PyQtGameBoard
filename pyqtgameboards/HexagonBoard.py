@@ -31,6 +31,7 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
         # selections and stuff
         self.selected_tile = None
+        self.adjacent_tiles = None
         self.target_tile = None
         self.line_of_sight = None
         self.colliding_items = None
@@ -38,82 +39,115 @@ class QHexagonboard(QtWidgets.QGraphicsView):
     def mousePressEvent(self, event):
 
         # store current selected tile
-        current_tile = self.selected_tile
+        current_selected_tile = self.selected_tile
 
         # get position (of pixel clicked)
         position = self.mapToScene(event.pos())
         # print(f"tile selected at position {position}")
 
         # associated tile graphic_item
-        new_tile = self.scene.itemAt(position, QtGui.QTransform())
+        new_selected_tile = self.scene.itemAt(position, QtGui.QTransform())
 
-        # remove selection of current selected tile
-        if new_tile == None:
-            if current_tile != None:
+        # if clicked outside of map, remove selection of current selected tile
+        if new_selected_tile == None and current_selected_tile != None:
                 
-                # check if there is a target tile to wipe
-                tiles = [current_tile] + [self.target_tile] if self.target_tile != None else [current_tile]
+            self.selection_removal(current_selected_tile)
 
-                # add the adjacent tiles
-                tiles += self.get_adjacent_tiles(current_tile)
+            if self.target_tile != None:
+                self.target_removal()
 
-                # remove selection
-                self.selected_tile = None
-                self.target_tile = None
+        elif new_selected_tile != None and current_selected_tile == None:
 
-                if self.line_of_sight != None:
-                    self.scene.removeItem(self.line_of_sight)
-                    self.line_of_sight = None
+            self.selection_new(new_selected_tile)
+            self.selection_adjacent_tiles()
 
-                if self.colliding_items != None:
-                    tiles += self.colliding_items
+        elif new_selected_tile != None and current_selected_tile != None:
+            if self.target_tile != None:
+                self.target_switch(new_selected_tile)
 
-                # rebuild the tiles
-                self.rebuild_tiles(tiles)
+            elif self.target_tile == None:
+                self.target_new(new_selected_tile)
 
-        elif new_tile != None:
+            self.selection_adjacent_tiles()
 
-            if current_tile == None:
+    def selection_removal(self, current_selected_tile):
+        """
+        Sets and paints a new selection when there is none yet.
+        """
 
-                # paint the new tile
-                selectbrush = QtGui.QBrush(QtGui.QColor(0,0,255,255))
-                self.paint_graphic_items([new_tile], brush = selectbrush)
+        # check if there is a target tile to wipe
+        tiles = [current_selected_tile]
 
-                # make new tile the selected tile
-                self.selected_tile = new_tile
+        # add the adjacent tiles
+        tiles += self.get_adjacent_tiles(current_selected_tile)
 
-            elif current_tile != None:
+        # remove selection
+        self.selected_tile = None
 
-                # if there is a target tile already, rebuild that tile
-                if self.target_tile != None:
-                    self.rebuild_tile(self.target_tile)
+        # rebuild the tiles
+        self.rebuild_tiles(tiles)
 
-                # set the new tile as the target tile and paint it accordingly
-                self.target_tile = new_tile
-                target_brush = QtGui.QBrush(QtGui.QColor(255,255,0,100))
-                self.paint_graphic_item(new_tile, brush = target_brush)
+    def selection_new(self, new_selected_tile):
+            
+        # paint the new tile
+        selectbrush = QtGui.QBrush(QtGui.QColor(0,0,255,255))
+        self.paint_graphic_items([new_selected_tile], brush = selectbrush)
 
-                # Remove any existing line of sight line
-                if self.line_of_sight != None:
-                    self.scene.removeItem(self.line_of_sight)
-                    self.line_of_sight = None
+        # make new tile the selected tile
+        self.selected_tile = new_selected_tile
 
-                # rebuild the collided items with this line
-                if self.colliding_items != None:
-                    self.rebuild_tiles(self.colliding_items)
+        # paint adjacent tiles
 
-                # Create a new line of sight between the selected tile and the target tile
-                self.colliding_items = self.create_line_of_sight(
-                    originobject=self.selected_tile,
-                    targetobject=self.target_tile,
-                    )
-                collide_brush = QtGui.QBrush(QtGui.QColor(50,50,50,100))
-                self.paint_graphic_items(self.colliding_items, brush = collide_brush)
+    def selection_adjacent_tiles(self):
 
-            # paint adjacent tiles
-            adjacent_brush = QtGui.QBrush(QtGui.QColor(0,0,255,100))
-            adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
-            self.paint_graphic_items(adjacent_tiles, brush = adjacent_brush)
+        # get adjacent tiles
+        adjacent_tiles = self.get_adjacent_tiles(self.selected_tile)
+
+        # paint adjacent tiles
+        adjacent_brush = QtGui.QBrush(QtGui.QColor(0,0,255,100))
+        self.paint_graphic_items(adjacent_tiles, brush = adjacent_brush)
+
+        return adjacent_tiles
+
+    def target_removal(self):
+
+        # reset target tile
+        tiles_to_reset = [self.target_tile]
+        self.target_tile = None
+        
+        # remove any line of sight
+        if self.line_of_sight != None:
+            self.scene.removeItem(self.line_of_sight)
+            self.line_of_sight = None
+
+        # remove any colliding items
+        if self.colliding_items != None:
+            tiles_to_reset += self.colliding_items
+        
+        # repaint tiles
+        self.rebuild_tiles(tiles_to_reset)
+
+    def target_new(self, new_selected_tile):
+
+        # set the new tile as the target tile and paint it accordingly
+        self.target_tile = new_selected_tile
+        target_brush = QtGui.QBrush(QtGui.QColor(255,255,0,100))
+        self.paint_graphic_item(new_selected_tile, brush = target_brush)
+
+        # Create a new line of sight between the selected tile and the target tile
+        self.colliding_items = self.create_line_of_sight(
+            originobject=self.selected_tile,
+            targetobject=self.target_tile,
+            )
+
+        # paint the colliding items that the line of sight goes through
+        collide_brush = QtGui.QBrush(QtGui.QColor(50,50,50,100))
+        self.paint_graphic_items(self.colliding_items, brush = collide_brush)
+
+    def target_switch(self, new_selected_tile):
+        
+        self.target_removal()
+        self.target_new(new_selected_tile)
 
     def wheelEvent(self, event):
 
