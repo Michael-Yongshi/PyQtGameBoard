@@ -452,7 +452,7 @@ class QHexagonboard(QtWidgets.QGraphicsView):
 
         # get an array of the coordinates in order to print
         coordinate_list = self.get_tiles_grid_location(colliding_items)
-        print(coordinate_list)
+        # print(coordinate_list)
 
         return colliding_items
 
