@@ -395,7 +395,7 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         
             # space between tiles in columns and rows to make a snug fit
             column_default = (self.size * 1.5) * self.scalemanual
-            column_offset = column_default / (self.size / 2)
+            column_offset = column_default / 2
 
             column_distance_even = column * column_default
             column_distance_odd = column * column_default + column_offset
@@ -547,7 +547,7 @@ def test_overlay_board():
 
     app()
     overlays = test_create_overlay()
-    frame = QHexagonboard(rows = 20, columns = 10, overlays = overlays)
+    frame = QHexagonboard(rows = 20, columns = 10, size = 6, overlays = overlays)
     main(frame)
 
 def test_create_overlay():
