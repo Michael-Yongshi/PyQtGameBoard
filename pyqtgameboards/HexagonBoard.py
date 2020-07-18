@@ -4,12 +4,13 @@ import collections
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 class QHexagonboard(QtWidgets.QGraphicsView):
-    def __init__(self, rows, columns, overlays = [], horizontal = True, relative = True):
+    def __init__(self, rows, columns, size = 4, overlays = [], horizontal = True, relative = True):
         QtWidgets.QGraphicsView.__init__(self)
 
         # set board parameters
         self.rows = rows
         self.columns = columns
+        self.size = size
         self.overlays = overlays
         self.horizontal = horizontal
         self.relative = relative
@@ -386,20 +387,20 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         """
        
         # tile size
-        radius = 2 * self.scalemanual
+        radius = (self.size / 2) * self.scalemanual
 
         if self.horizontal == True:
             # set the angle of the hexagon
             angle = 0
         
             # space between tiles in columns and rows to make a snug fit
-            column_default = 6 * self.scalemanual
-            column_offset = column_default / 2
+            column_default = (self.size * 1.5) * self.scalemanual
+            column_offset = column_default / (self.size / 2)
 
             column_distance_even = column * column_default
             column_distance_odd = column * column_default + column_offset
 
-            row_default = 1.7 * self.scalemanual
+            row_default = (self.size / 2.353) * self.scalemanual
             row_distance = row * row_default
 
             # set screen adjustments
