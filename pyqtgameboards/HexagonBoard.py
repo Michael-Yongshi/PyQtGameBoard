@@ -192,6 +192,9 @@ class QHexagonboard(QtWidgets.QGraphicsView):
             column = 1
             while column <= self.columns:
 
+                """
+                maybe add following to seperate method, so this method can be shape agnostic
+                """
                 # create the hexagon at the specified location
                 hexagon_shape = self.create_hexagon_shape(row, column)
 
@@ -278,86 +281,6 @@ class QHexagonboard(QtWidgets.QGraphicsView):
                     self.paint_graphic_item(tile, pen, brush)
                     
                     break
-
-    def create_hexagon_shape(self, row, column):
-        """
-        Method to easily determine the angle and position of a hexagon tile
-        within a gameboard
-        """
-       
-        # tile size
-        radius = 2 * self.scalemanual
-
-        if self.horizontal == True:
-            # set the angle of the hexagon
-            angle = 0
-        
-            # space between tiles in columns and rows to make a snug fit
-            column_default = 6 * self.scalemanual
-            column_offset = column_default / 2
-
-            column_distance_even = column * column_default
-            column_distance_odd = column * column_default + column_offset
-
-            row_default = 1.7 * self.scalemanual
-            row_distance = row * row_default
-
-            # set screen adjustments
-            if self.relative == True:
-                # get relative position of tile against center of screen
-                # print(f"center = {self.center}")
-
-                screen_offset_x = self.center.x() - ((self.columns / 2) * column_default) + self.shiftfocus.x()
-                screen_offset_y = self.center.y() - ((self.rows / 2) * row_default) + self.shiftfocus.y()
-                # print(f"offset x = {screen_offset_x}")
-                # print(f"offset y = {screen_offset_y}")
-
-            else:
-                # get absolute position of tiles against top and left of screen
-                screen_offset_x = 2 * self.scalemanual
-                screen_offset_y = 2 * self.scalemanual
-
-            # if row number is odd, offset the hexes nicely in between the columns of the previous
-            x = column_distance_even + screen_offset_x if (row % 2) == 0 else column_distance_odd + screen_offset_x
-            y = row_distance + screen_offset_y
-
-
-        elif self.horizontal == False:
-            """Needs a lot more work"""
-            # set the angle of the hexagon
-            angle = 90
-
-            # space between tiles in columns and rows to make a snug fit
-            column_default = 3 * self.scalemanual
-            column_distance = column * column_default
-
-            row_default = 2.5 * self.scalemanual
-            row_offset = 1.5 * self.scalemanual
-            row_distance_even = row * row_default
-            row_distance_odd = row * row_default + row_offset
-
-            # set screen adjustments
-            if self.relative == True:
-                # get relative position of tile against center of screen
-                # print(f"center = {self.center}")
-                
-                screen_offset_x = self.center.x() - ((self.columns / 2) * (2 * self.scalemanual))
-                screen_offset_y = self.center.y() - ((self.rows / 2) * (2 * self.scalemanual))
-                # print(f"offset x = {screen_offset_x}")
-                # print(f"offset y = {screen_offset_y}")
-
-            else:
-                # get absolute position of tiles against top and left of screen
-                screen_offset_x = 2 * self.scalemanual
-                screen_offset_y = 2 * self.scalemanual
-
-            # if row number is odd, offset the hexes nicely in between the columns of the previous
-            x = column_distance + screen_offset_x
-            y = row_distance_even + screen_offset_y if (column % 2) == 0 else row_distance_odd + screen_offset_x
-
-        hexagon_shape = QHexagonShape(x, y, radius, angle)
-
-        return hexagon_shape
 
     def get_tiles_grid_location(self, tiles):
 
@@ -455,6 +378,86 @@ class QHexagonboard(QtWidgets.QGraphicsView):
         # print(coordinate_list)
 
         return colliding_items
+
+    def create_hexagon_shape(self, row, column):
+        """
+        Method to easily determine the angle and position of a hexagon tile
+        within a gameboard
+        """
+       
+        # tile size
+        radius = 2 * self.scalemanual
+
+        if self.horizontal == True:
+            # set the angle of the hexagon
+            angle = 0
+        
+            # space between tiles in columns and rows to make a snug fit
+            column_default = 6 * self.scalemanual
+            column_offset = column_default / 2
+
+            column_distance_even = column * column_default
+            column_distance_odd = column * column_default + column_offset
+
+            row_default = 1.7 * self.scalemanual
+            row_distance = row * row_default
+
+            # set screen adjustments
+            if self.relative == True:
+                # get relative position of tile against center of screen
+                # print(f"center = {self.center}")
+
+                screen_offset_x = self.center.x() - ((self.columns / 2) * column_default) + self.shiftfocus.x()
+                screen_offset_y = self.center.y() - ((self.rows / 2) * row_default) + self.shiftfocus.y()
+                # print(f"offset x = {screen_offset_x}")
+                # print(f"offset y = {screen_offset_y}")
+
+            else:
+                # get absolute position of tiles against top and left of screen
+                screen_offset_x = 2 * self.scalemanual
+                screen_offset_y = 2 * self.scalemanual
+
+            # if row number is odd, offset the hexes nicely in between the columns of the previous
+            x = column_distance_even + screen_offset_x if (row % 2) == 0 else column_distance_odd + screen_offset_x
+            y = row_distance + screen_offset_y
+
+
+        elif self.horizontal == False:
+            """Needs a lot more work"""
+            # set the angle of the hexagon
+            angle = 90
+
+            # space between tiles in columns and rows to make a snug fit
+            column_default = 3 * self.scalemanual
+            column_distance = column * column_default
+
+            row_default = 2.5 * self.scalemanual
+            row_offset = 1.5 * self.scalemanual
+            row_distance_even = row * row_default
+            row_distance_odd = row * row_default + row_offset
+
+            # set screen adjustments
+            if self.relative == True:
+                # get relative position of tile against center of screen
+                # print(f"center = {self.center}")
+                
+                screen_offset_x = self.center.x() - ((self.columns / 2) * (2 * self.scalemanual))
+                screen_offset_y = self.center.y() - ((self.rows / 2) * (2 * self.scalemanual))
+                # print(f"offset x = {screen_offset_x}")
+                # print(f"offset y = {screen_offset_y}")
+
+            else:
+                # get absolute position of tiles against top and left of screen
+                screen_offset_x = 2 * self.scalemanual
+                screen_offset_y = 2 * self.scalemanual
+
+            # if row number is odd, offset the hexes nicely in between the columns of the previous
+            x = column_distance + screen_offset_x
+            y = row_distance_even + screen_offset_y if (column % 2) == 0 else row_distance_odd + screen_offset_x
+
+        hexagon_shape = QHexagonShape(x, y, radius, angle)
+
+        return hexagon_shape
 
 class QHexagonTile(QtWidgets.QGraphicsPolygonItem):
 
