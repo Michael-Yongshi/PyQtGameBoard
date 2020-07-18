@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="yongshi-pyqtgameboard",
+    name="pyqt-gameboard",
     version="0.2.5",
     author="Michael-Yongshi",
     author_email="4registration@outlook.com",
