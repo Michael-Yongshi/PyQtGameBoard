@@ -15,7 +15,7 @@ PyQt5 widget that draws a board on the screen to include in games or map drawing
 
 ## Install
 ```
-pip install yongshi-pyqtgameboard
+pip install pyqt-gameboard
 ```
 
 ## Import
