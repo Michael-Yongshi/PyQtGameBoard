@@ -5,6 +5,7 @@ PyQt5 widget that draws a board on the screen to include in games or map drawing
 ### 0.2
 0.2.5   Added optional size parameter for the size of the tiles
         Added a rectangle board
+        changed pip name to pyqt-gameboard
 0.2.4   removed some prints
 0.2.3   fixed selection deleting previous overlays
         split mousepress method so its easier to subclass
