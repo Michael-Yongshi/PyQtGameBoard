@@ -32,7 +32,7 @@ from pyqtgameboards.gameboards import QHexagonboard
 or import the parent class QGameboard to create a different style map than the defaults
 
 ```
-from pyqtgameboards.gameboard import QHexagonboard
+from pyqtgameboards.gameboard import QGameboard
 ```
 
 make sure to super the methods that need specific shape implementation
@@ -56,9 +56,10 @@ from pyqtgameboards.gameboard import QHexagonboard
 if __name__ == '__main__':
 
     overlays = []
+
     overlay1brush = QtGui.QBrush(QtGui.QColor(0,255,0,150))
-    overlay1pen = QtGui.QPen(QtGui.QColor(0,255,0))
-    overlay1pen.setWidth(3)
+    overlay1pen = QtGui.QPen(QtGui.QColor(0,255,0), 3, QSolidLine)
+
     overlay1dict = {
         "Brush": overlay1brush,
         "Pen": overlay1pen,
@@ -69,6 +70,7 @@ if __name__ == '__main__':
             [3, 3],
             ],
         }
+        
     overlays.append(overlay1dict)
 
     global app
