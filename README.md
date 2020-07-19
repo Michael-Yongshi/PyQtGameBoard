@@ -3,6 +3,7 @@ PyQt5 widget that draws a board on the screen to include in games or map drawing
 
 ## Version
 ### 0.2
+0.2.6   Created QGameboard parent class for optimization and customization
 0.2.5   Added optional size parameter for the size of the tiles
         Added a rectangle board
         changed pip name to pyqt-gameboard
@@ -20,12 +21,28 @@ pip install pyqt-gameboard
 ```
 
 ## Import
+### Directly usable
+import the directly usable boards
 ```
-from pyqtgameboards.HexagonBoard import QHexagonboard
+from pyqtgameboards.gameboards import QRectangleboard
+from pyqtgameboards.gameboards import QHexagonboard
+```
+
+### Generic parent class for custom shape grids
+or import the parent class QGameboard to create a different style map than the defaults
+
+```
+from pyqtgameboards.gameboard import QHexagonboard
+```
+
+make sure to super the methods that need specific shape implementation
+```
+add_shape_to_scene # logic for adding a shape to a grid
+get_adjacent_tiles # logic for determining the adjacent tiles
 ```
 
 ## How to
-to try out, copying the following to open a widget with a gameboard
+to try out, copying the following to open a widget with a hexagon board
 This is a gameboard of 20 rows and 10 columns (feels like 20, as it only counts tiles at the same height)
 This example creates designated tiles that receive a green fill with a thick green line
 
@@ -34,7 +51,7 @@ import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-from pyqtgameboards.HexagonBoard import QHexagonboard
+from pyqtgameboards.gameboard import QHexagonboard
 
 if __name__ == '__main__':
 
