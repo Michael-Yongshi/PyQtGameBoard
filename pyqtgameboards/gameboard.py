@@ -187,7 +187,7 @@ class QGameboard(QtWidgets.QGraphicsView):
         brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
         pen = QtGui.QPen(QtGui.QColor(0,0,0), 1, QtCore.Qt.SolidLine)
         
-        # Create hexagons for all the rows and columns
+        # Create tiles for all the rows and columns
         row = 1
         while row <= self.rows:
 
@@ -299,8 +299,9 @@ class QGameboard(QtWidgets.QGraphicsView):
 
     def paint_graphic_items(self, graphic_items, pen = None, brush = None):
 
-        for graphic_item in graphic_items:
-            self.paint_graphic_item(graphic_item, pen, brush)
+        if graphic_items != None:
+            for graphic_item in graphic_items:
+                self.paint_graphic_item(graphic_item, pen, brush)
 
     def paint_graphic_item(self, graphic_item, pen = None, brush = None):
         if pen != None:
@@ -359,6 +360,117 @@ class QGameboard(QtWidgets.QGraphicsView):
 
         return NotImplemented
 
+class QEmptyboard(QGameboard):
+    def __init__(self, rows, columns, size = 4, overlays = [], horizontal = True, relative = True):
+        super().__init__(rows, columns, size, overlays, horizontal, relative)
+
+    def build_tiles(self):
+
+        #  default white background surrounded by a black 1 width line
+        brush = QtGui.QBrush(QtGui.QColor(255,255,255,255))
+        pen = QtGui.QPen(QtGui.QColor(0,0,0), 1, QtCore.Qt.SolidLine)
+       
+        xmax = self.rows * 10 * self.size
+        ymax = self.columns * 10 * self.size
+
+        board = self.add_borders_to_scene(self.rows, self.columns, pen, brush)
+
+        unit = self.add_shape_to_scene(2, 5, pen, brush)
+        unit = self.add_shape_to_scene(5, 3, pen, brush)
+        unit = self.add_shape_to_scene(5, 4, pen, brush)
+
+    def add_borders_to_scene(self, row, column, pen, brush):
+
+        """
+        Method to easily determine the position of the gameboard
+        """
+
+        # tile size (only perfect squares for now)
+        height = self.size * self.scalemanual * 10
+        width = self.size * self.scalemanual * 10
+
+    
+        # space between tiles in columns and rows to make a snug fit
+        column_default = self.size * self.scalemanual
+        column_distance = column * column_default
+
+        row_default = self.size * self.scalemanual
+        row_distance = row * row_default
+
+        # set screen adjustments
+        if self.relative == True:
+            # get relative position of tile against center of screen
+            # print(f"center = {self.center}")
+
+            screen_offset_x = self.center.x() - ((self.columns / 2) * column_default) + self.shiftfocus.x()
+            screen_offset_y = self.center.y() - ((self.rows / 2) * row_default) + self.shiftfocus.y()
+            # print(f"offset x = {screen_offset_x}")
+            # print(f"offset y = {screen_offset_y}")
+
+        else:
+            # get absolute position of tiles against top and left of screen
+            screen_offset_x = 2 * self.scalemanual
+            screen_offset_y = 2 * self.scalemanual
+
+
+        x = column_distance + screen_offset_x
+        y = row_distance + screen_offset_y
+
+        # We can use the default QRectF object to create a perfectly fine square
+        rectangle_shape = QtCore.QRectF(x, y, width, height)
+
+        # Create the background tile
+        tile = self.scene.addRect(rectangle_shape, pen, brush)
+        return tile
+
+    def add_shape_to_scene(self, row, column, pen, brush):
+
+        """
+        Method to easily determine the position of a rectangle tile
+        within a gameboard
+        """
+
+        # tile size (only perfect squares for now)
+        height = self.size * self.scalemanual
+        width = self.size * self.scalemanual
+
+    
+        # space between tiles in columns and rows to make a snug fit
+        column_default = self.size * self.scalemanual
+        column_distance = column * column_default
+
+        row_default = self.size * self.scalemanual
+        row_distance = row * row_default
+
+        # set screen adjustments
+        if self.relative == True:
+            # get relative position of tile against center of screen
+            # print(f"center = {self.center}")
+
+            screen_offset_x = self.center.x() - ((self.columns / 2) * column_default) + self.shiftfocus.x()
+            screen_offset_y = self.center.y() - ((self.rows / 2) * row_default) + self.shiftfocus.y()
+            # print(f"offset x = {screen_offset_x}")
+            # print(f"offset y = {screen_offset_y}")
+
+        else:
+            # get absolute position of tiles against top and left of screen
+            screen_offset_x = 2 * self.scalemanual
+            screen_offset_y = 2 * self.scalemanual
+
+
+        x = column_distance + screen_offset_x
+        y = row_distance + screen_offset_y
+
+        # We can use the default QRectF object to create a perfectly fine circle
+        circle_shape = QtWidgets.QGraphicsEllipseItem(x, y, width, height)
+
+        # Create the background tile
+        tile = self.scene.addItem(circle_shape)
+        return tile
+
+    def get_adjacent_tiles(self, target_tile):
+        pass
+        
 class QRectangleboard(QGameboard):
     def __init__(self, rows, columns, size = 4, overlays = [], horizontal = True, relative = True):
         super().__init__(rows, columns, size, overlays, horizontal, relative)
@@ -594,6 +706,13 @@ class QHexagonShape(QtGui.QPolygonF):
             # add side to polygon
             self.append(QtCore.QPointF(x, y)) 
 
+def test_empty_board():
+
+    app()
+    # overlays = test_create_overlay()
+    frame = QEmptyboard(rows = 5, columns = 6, size = 6)
+    main(frame)
+
 def test_rectangle_board():
 
     app()
@@ -690,4 +809,5 @@ def main(frame):
 if __name__ == '__main__':
 
     # test_rectangle_board()
-    test_hexagon_board()
+    # test_hexagon_board()
+    test_empty_board()
