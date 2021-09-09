@@ -57,6 +57,13 @@ class QGameboard(QtWidgets.QGraphicsView):
 
             if self.target_tile != None:
                 self.target_removal()
+                
+        # if clicked on current tile, remove selection of current selected tile
+        elif current_selected_tile and new_selected_tile == current_selected_tile:
+            self.selection_removal(current_selected_tile)
+
+            if self.target_tile != None:
+                self.target_removal()
 
         elif new_selected_tile != None and current_selected_tile == None:
 
